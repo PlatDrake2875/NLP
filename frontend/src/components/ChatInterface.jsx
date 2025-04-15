@@ -1,3 +1,4 @@
+// HIA/frontend/src/components/ChatInterface.jsx
 import React, { useRef } from 'react';
 import { Header } from './Header';
 import { ChatHistory } from './ChatHistory';
@@ -10,19 +11,23 @@ export function ChatInterface({
   onSubmit,
   onClearHistory,
   onDownloadHistory,
+  // --- Receive theme props ---
+  isDarkMode,
+  toggleTheme,
 }) {
-  const chatContainerRef = useRef(null); // Ref for the scrollable chat history container
-  const bottomOfChatRef = useRef(null); // Ref for the element ChatForm is visually associated with
+  const chatContainerRef = useRef(null);
+  const bottomOfChatRef = useRef(null);
 
   return (
     <main className="chat-interface">
       <Header
-        // Pass the session ID to potentially display it
         activeSessionId={activeSessionId}
         clearChatHistory={onClearHistory}
         downloadChatHistory={onDownloadHistory}
-        // Disable buttons if no active session
         disabled={!activeSessionId}
+        // --- Pass theme props down ---
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
       />
       <div className="chat-area" ref={chatContainerRef}>
           {activeSessionId ? (
@@ -33,21 +38,18 @@ export function ChatInterface({
               </div>
            )
           }
-        {/* An empty div at the bottom for the ScrollToBottomButton to observe */}
         <div ref={bottomOfChatRef} style={{ height: '1px' }} />
       </div>
 
-        {/* Conditionally render form only if a session is active */}
         {activeSessionId && (
           <div className="chat-input-area">
               <ChatForm onSubmit={onSubmit} />
           </div>
         )}
 
-       {/* Scroll button observes the bottom ref relative to the chat container */}
        <ScrollToBottomButton
-           containerRef={chatContainerRef} // Pass the scrollable container ref
-           targetRef={bottomOfChatRef} // Pass the ref for the bottom marker
+           containerRef={chatContainerRef}
+           targetRef={bottomOfChatRef}
        />
     </main>
   );
