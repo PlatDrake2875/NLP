@@ -56,13 +56,12 @@ function App() {
     setActiveSessionId(sessionId);
   }, []);
 
-  // Handler to submit a message in the active chat
   const handleChatSubmit = useCallback(async (query) => {
-    if (!activeSessionId) return; // Do nothing if no chat is active
+    if (!activeSessionId) return;
 
     const userMessage = { sender: 'user', text: query };
 
-    // Update the specific session's history optimistically
+    // Optimistically add user message
     setSessions((prevSessions) => ({
       ...prevSessions,
       [activeSessionId]: [...(prevSessions[activeSessionId] || []), userMessage],
@@ -74,24 +73,49 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
       });
+
+      // Handle potential non-OK responses (optional but good practice)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       const botMessage = { sender: 'bot', text: data.answer };
 
-      // Add the bot's response to the active session's history
-      setSessions((prevSessions) => ({
-        ...prevSessions,
-        [activeSessionId]: [...(prevSessions[activeSessionId] || []), botMessage],
-      }));
+      // CORRECTED: Add bot message to the *current* history
+      setSessions((prevSessions) => {
+        // Get the latest history for the active session
+        const currentHistory = prevSessions[activeSessionId] || [];
+        // Ensure the user message is present before adding the bot message
+        // (This check is defensive, the optimistic update should ensure it's there)
+        const historyWithUserMsg = currentHistory.find(msg => msg === userMessage)
+          ? currentHistory
+          : [...currentHistory, userMessage]; // Fallback if optimistic update somehow failed between renders
+
+        return {
+          ...prevSessions,
+          [activeSessionId]: [...historyWithUserMsg, botMessage],
+        };
+      });
+
     } catch (error) {
       console.error('Error fetching chat response:', error);
-       // Optionally add an error message to the chat
-       const errorMessage = { sender: 'bot', text: 'Sorry, I encountered an error.' };
-        setSessions((prevSessions) => ({
-         ...prevSessions,
-         [activeSessionId]: [...(prevSessions[activeSessionId] || []), errorMessage],
-       }));
+      const errorMessage = { sender: 'bot', text: `Sorry, I encountered an error: ${error.message}` }; // Include error message
+
+      // CORRECTED: Add error message to the *current* history
+      setSessions((prevSessions) => {
+         const currentHistory = prevSessions[activeSessionId] || [];
+         const historyWithUserMsg = currentHistory.find(msg => msg === userMessage)
+           ? currentHistory
+           : [...currentHistory, userMessage]; // Fallback
+
+         return {
+           ...prevSessions,
+           [activeSessionId]: [...historyWithUserMsg, errorMessage],
+         };
+       });
     }
-  }, [activeSessionId, setSessions]);
+  }, [activeSessionId, setSessions]); // Dependencies seem correct
 
   // Handler to clear the active chat history
   const clearActiveChatHistory = useCallback(() => {

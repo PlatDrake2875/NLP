@@ -1,48 +1,51 @@
-/* Global Styles & Resets */
+/* --- Base & Variables --- */
 :root {
-  --background-color: #FFFFFF; /* Light mode background */
-  --text-color: #000000; /* Light mode text */
-  --sidebar-bg: #F9F9F9; /* Light sidebar */
-  --sidebar-text: #333333;
-  --sidebar-hover-bg: #E0E0E0;
-  --sidebar-active-bg: #D0D0D0;
-  --header-bg: #FFFFFF;
-  --border-color: #E0E0E0;
-  --button-bg: #4A90E2; /* Primary button color */
-  --button-text: #FFFFFF;
-  --button-hover-bg: #357ABD;
-  --input-bg: #FFFFFF;
-  --input-border: #CCCCCC;
-  --input-focus-border: #4A90E2;
-  --user-message-bg: #DCF8C6; /* Light green for user */
-  --bot-message-bg: #F1F0F0; /* Light grey for bot */
-  --message-text: #000000;
-  --code-bg: #2d2d2d; /* Dark background for code blocks */
-  --code-text: #f0f0f0;
+  /* Light Theme (Default) */
+  --bg-primary: #FFFFFF;         /* Overall page background */
+  --bg-secondary: #F9F9F9;       /* Sidebar, subtle backgrounds */
+  --bg-tertiary: #F1F0F0;        /* Bot message bubble */
+  --bg-accent: #DCF8C6;          /* User message bubble */
+  --bg-input: #FFFFFF;          /* Input field background */
+  --bg-button-primary: #4A90E2;  /* Main action buttons */
+  --bg-button-hover: #357ABD;
+  --bg-button-secondary: #E0E0E0;/* Less prominent buttons (header) */
+  --bg-button-secondary-hover: #D0D0D0;
+  --bg-code: #2d2d2d;            /* Code block background */
+
+  --text-primary: #111827;       /* Main text */
+  --text-secondary: #6B7280;     /* Sidebar text, placeholders */
+  --text-accent: #000000;        /* Text on accent backgrounds (user bubble) */
+  --text-button: #FFFFFF;       /* Text on primary buttons */
+  --text-code: #f0f0f0;          /* Code block text */
+
+  --border-primary: #E5E7EB;     /* Main borders (sidebar, header, input) */
+  --border-focus: #4A90E2;       /* Input focus highlight */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-/* Example Dark Mode (Optional - can be toggled via JS/CSS class on body) */
-/*
+/* Example Dark Mode (Add 'dark-mode' class to body)
 body.dark-mode {
-  --background-color: #343541;
-  --text-color: #FFFFFF;
-  --sidebar-bg: #202123;
-  --sidebar-text: #ECECF1;
-  --sidebar-hover-bg: #2A2B32;
-  --sidebar-active-bg: #343541;
-  --header-bg: #343541;
-  --border-color: #4D4D4F;
-  --button-bg: #10A37F;
-  --button-text: #FFFFFF;
-  --button-hover-bg: #0E8E6D;
-  --input-bg: #40414F;
-  --input-border: #565869;
-  --input-focus-border: #10A37F;
-  --user-message-bg: #2E4B41;
-  --bot-message-bg: #444654;
-  --message-text: #ECECF1;
-  --code-bg: #1e1e1e;
-  --code-text: #d4d4d4;
+  --bg-primary: #1F2937;
+  --bg-secondary: #111827;
+  --bg-tertiary: #374151;
+  --bg-accent: #059669; // Darker green 
+  --bg-input: #374151;
+  --bg-button-primary: #10B981;
+  --bg-button-hover: #059669;
+  --bg-button-secondary: #4B5563;
+  --bg-button-secondary-hover: #6B7280;
+  --bg-code: #111827;
+
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-accent: #FFFFFF;
+  --text-button: #FFFFFF;
+  --text-code: #d4d4d4;
+
+  --border-primary: #4B5563;
+  --border-focus: #10B981;
 }
 */
 
@@ -52,62 +55,92 @@ body.dark-mode {
   padding: 0;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  line-height: 1.6;
+html, body {
+    height: 100%; /* Ensure html and body take full height */
+    overflow: hidden; /* Prevent scrollbars on the body itself */
 }
 
-/* Main App Layout */
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: 16px; /* Base font size */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Provide a base font stack if Inter isn't available */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+
+/* --- Main Layout --- */
 .App {
   display: flex;
-  height: 100vh; /* Full viewport height */
-  overflow: hidden; /* Prevent body scroll */
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* Sidebar Styles */
+/* --- Sidebar --- */
 .sidebar {
   width: 260px;
-  background-color: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  padding: 1rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  padding: 0.75rem; /* Reduced padding slightly */
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border-color);
-  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  border-right: 1px solid var(--border-primary);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Theme transitions */
 }
 
 .new-chat-button {
   background-color: transparent;
-  color: var(--sidebar-text);
-  border: 1px solid var(--border-color);
-  padding: 0.75rem;
+  color: var(--text-primary); /* Use primary text for button */
+  border: 1px solid var(--border-primary);
+  padding: 0.6rem 0.75rem; /* Adjusted padding */
   border-radius: 8px;
   font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
   margin-bottom: 1rem;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  width: 100%; /* Make button full width of sidebar padding */
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  width: 100%;
 }
 
 .new-chat-button:hover {
-  background-color: var(--sidebar-hover-bg);
-  border-color: var(--sidebar-hover-bg);
+  background-color: var(--bg-button-secondary); /* Use secondary button style */
+  border-color: var(--bg-button-secondary);
 }
 
 .conversation-menu {
-  flex-grow: 1; /* Takes remaining space */
-  overflow-y: auto; /* Scrollable if list is long */
+  flex-grow: 1;
+  overflow-y: auto;
+   /* Subtle scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-button-secondary) transparent;
+}
+.conversation-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.conversation-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.conversation-menu::-webkit-scrollbar-thumb {
+  background-color: var(--bg-button-secondary);
+  border-radius: 10px;
 }
 
+
 .conversation-menu h2 {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  color: #666; /* Lighter color for heading */
-  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
   padding: 0 0.5rem;
 }
 
@@ -118,102 +151,124 @@ body {
 .conversation-item {
   margin-bottom: 0.25rem;
   border-radius: 6px;
-  display: flex; /* Use flexbox for alignment */
-  justify-content: space-between; /* Space between text and delete button */
-  align-items: center; /* Vertically align items */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   transition: background-color 0.2s ease;
 }
 
 .conversation-item:hover {
-   background-color: var(--sidebar-hover-bg);
+  background-color: var(--bg-button-secondary);
 }
 
+/* Adjust active background if needed */
 .conversation-item.active {
-  background-color: var(--sidebar-active-bg);
-  font-weight: 500;
+    background-color: var(--bg-button-secondary-hover); /* Slightly darker */
+    color: var(--text-primary); /* Ensure text is readable */
 }
+.conversation-item.active .session-select-button,
+.conversation-item.active .delete-session-button {
+    color: var(--text-primary); /* Ensure buttons inherit active color */
+}
+
 
 .session-select-button {
-    flex-grow: 1; /* Allow button to take available space */
-    padding: 0.6rem 0.8rem;
-    background: none;
-    border: none;
-    color: inherit; /* Inherit text color from parent */
-    text-align: left;
-    cursor: pointer;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Add ellipsis if name is too long */
+  flex-grow: 1;
+  padding: 0.6rem 0.8rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary); /* Default to secondary text */
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500; /* Slightly bolder */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 6px; /* Apply radius to button itself */
+}
+/* Ensure hover applies within the button area */
+.conversation-item:hover .session-select-button {
+    color: var(--text-primary); /* Darker text on hover */
 }
 
+
 .delete-session-button {
-    background: none;
-    border: none;
-    color: var(--sidebar-text);
-    cursor: pointer;
-    padding: 0.5rem;
-    margin-left: 0.5rem; /* Space between text and delete icon */
-    font-size: 0.8rem;
-    opacity: 0.6; /* Make it less prominent */
-    transition: opacity 0.2s ease;
-    flex-shrink: 0; /* Prevent button from shrinking */
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-left: 0.25rem; /* Reduced margin */
+  font-size: 1rem; /* Slightly larger icon */
+  opacity: 0.6;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+  border-radius: 6px;
 }
 
 .conversation-item:hover .delete-session-button,
-.delete-session-button:focus { /* Show on hover of item or focus */
-    opacity: 1;
+.delete-session-button:focus {
+  opacity: 1;
+  color: var(--text-primary);
 }
 
 .no-sessions {
-  color: #888;
+  color: var(--text-secondary);
   padding: 0.6rem 0.8rem;
   font-style: italic;
   font-size: 0.9rem;
 }
 
 
-/* Chat Interface Styles */
+/* --- Chat Interface --- */
 .chat-interface {
-  flex-grow: 1; /* Takes remaining horizontal space */
-  display: flex;
-  flex-direction: column;
-  height: 100vh; /* Full height within its flex container */
-  background-color: var(--background-color);
-  position: relative; /* Needed for scroll button positioning */
+  flex-grow: 1;     /* CRUCIAL: Allows this element to take up all remaining horizontal space */
+  display: flex;     /* Enables flexbox for its children (header, chat area, input) */
+  flex-direction: column; /* Stacks children vertically */
+  overflow: hidden;  /* Prevents internal content from breaking the layout */
+  min-width: 0;      /* Sometimes helps flex items shrink/grow correctly */
 }
 
-/* Chat Header Styles */
+/* --- Chat Header --- */
 .chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1.5rem;
-  background-color: var(--header-bg);
-  border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0; /* Prevent header from shrinking */
+  padding: 0.75rem 1.5rem; /* Standard padding */
+  background-color: var(--bg-primary); /* Match interface bg */
+  border-bottom: 1px solid var(--border-primary);
+  flex-shrink: 0;
+  position: relative; /* For potential absolute elements */
+  z-index: 10; /* Keep above chat area */
+  transition: background-color 0.3s ease, border-color 0.3s ease; /* Theme transitions */
 }
 
 .chat-header h1 {
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1rem; /* Slightly smaller title */
+  font-weight: 600; /* Bolder title */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions button {
   margin-left: 0.75rem;
   background-color: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary); /* Use secondary text for less emphasis */
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .header-actions button:hover:not(:disabled) {
-  background-color: var(--sidebar-hover-bg); /* Use sidebar hover for consistency */
-  border-color: var(--sidebar-hover-bg);
+  background-color: var(--bg-button-secondary);
+  border-color: var(--bg-button-secondary);
+  color: var(--text-primary); /* Darker text on hover */
 }
 .header-actions button:disabled {
   opacity: 0.5;
@@ -221,12 +276,25 @@ body {
 }
 
 
-/* Chat Area (History) Styles */
+/* --- Chat Area (History) --- */
 .chat-area {
-  flex-grow: 1; /* Takes up available vertical space */
-  overflow-y: auto; /* Enables scrolling for chat history */
-  padding: 1.5rem;
-  padding-bottom: 1rem; /* Space above input area */
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1rem; /* Vertical padding, less horizontal */
+   /* Subtle scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-button-secondary) transparent;
+}
+.chat-area::-webkit-scrollbar {
+  width: 8px;
+}
+.chat-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-area::-webkit-scrollbar-thumb {
+  background-color: var(--bg-button-secondary);
+  border-radius: 10px;
+  border: 2px solid var(--bg-primary); /* Creates padding around thumb */
 }
 
 .no-chat-selected {
@@ -234,56 +302,60 @@ body {
     justify-content: center;
     align-items: center;
     height: 100%;
-    color: #888;
+    color: var(--text-secondary);
     font-size: 1.1rem;
 }
 
+/* Center the conversation flow */
 .chat-history {
-  /* Max width for readability, centered */
-  max-width: 800px;
-  margin: 0 auto;
+  max-width: 800px; /* Max width for readability */
+  margin: 0 auto; /* Center horizontally */
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Space between messages */
+  gap: 0.25rem; /* Reduced gap between messages */
 }
 
+/* Styling for the container holding each message bubble */
 .message-container {
-    display: flex;
+  display: flex;
+  margin-bottom: 0.75rem; /* Space below each message group */
 }
 
 .message-container.user {
-    justify-content: flex-end; /* Align user messages to the right */
+  justify-content: flex-end; /* Align user messages to the right */
 }
 
 .message-container.bot {
-    justify-content: flex-start; /* Align bot messages to the left */
+  justify-content: flex-start; /* Align bot messages to the left */
 }
 
+/* Styling for the message bubble itself */
 .chat-message {
   padding: 0.75rem 1rem;
-  border-radius: 12px; /* More rounded corners */
-  max-width: 80%; /* Limit message width */
-  word-wrap: break-word; /* Break long words */
+  border-radius: 18px; /* More rounded corners */
+  max-width: 85%; /* Limit message width slightly more */
+  word-wrap: break-word;
   position: relative;
   line-height: 1.5;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.3s ease, color 0.3s ease; /* Theme transitions */
 }
 
 .chat-message.user {
-  background-color: var(--user-message-bg);
-  color: var(--message-text);
-  border-bottom-right-radius: 4px; /* Slightly different corner */
+  background-color: var(--bg-accent);
+  color: var(--text-accent); /* Specific text color for user bubble */
+  border-bottom-right-radius: 6px; /* Slightly flattened corner */
 }
 
 .chat-message.bot {
-  background-color: var(--bot-message-bg);
-  color: var(--message-text);
-  border-bottom-left-radius: 4px; /* Slightly different corner */
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-bottom-left-radius: 6px; /* Slightly flattened corner */
 }
 
-/* Markdown Content Styling */
+/* --- Markdown Content Styling --- */
 .markdown-content {
-  /* Ensure paragraphs, lists etc inside markdown have normal margins */
+  /* Basic styling for elements inside markdown */
 }
 .markdown-content p {
   margin-bottom: 0.5em;
@@ -293,133 +365,227 @@ body {
 }
 .markdown-content ul,
 .markdown-content ol {
-  margin-left: 1.5em;
-  margin-bottom: 0.5em;
+  margin-left: 1.25em; /* Standard list indent */
+  margin-bottom: 0.75em;
+  padding-left: 0.5em; /* Add padding for list markers */
 }
-.markdown-content code {
-  background-color: var(--code-bg);
-  color: var(--code-text);
+.markdown-content li {
+    margin-bottom: 0.25em; /* Space between list items */
+}
+.markdown-content a {
+    color: var(--bg-button-primary); /* Link color */
+    text-decoration: none;
+}
+.markdown-content a:hover {
+    text-decoration: underline;
+}
+
+/* Code block styling */
+.markdown-content code:not(pre code) { /* Inline code */
+  background-color: var(--bg-button-secondary); /* Subtle background */
+  color: var(--text-primary);
   padding: 0.2em 0.4em;
-  border-radius: 3px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.9em;
+  border-radius: 4px;
+  font-size: 0.875em; /* Slightly smaller */
+  word-break: break-all;
 }
-.markdown-content pre {
-  background-color: var(--code-bg);
-  color: var(--code-text);
+.markdown-content pre { /* Code block container */
+  background-color: var(--bg-code);
+  color: var(--text-code);
   padding: 1em;
-  border-radius: 6px;
-  overflow-x: auto; /* Allow scrolling for long code lines */
-  margin: 0.5em 0;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.75em 0;
+  font-size: 0.9em;
+   /* Subtle scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-secondary) transparent;
 }
-.markdown-content pre code {
-  background-color: transparent; /* Code inside pre doesn't need its own bg */
+.markdown-content pre::-webkit-scrollbar {
+  height: 6px;
+}
+.markdown-content pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+.markdown-content pre::-webkit-scrollbar-thumb {
+  background-color: var(--text-secondary);
+  border-radius: 10px;
+}
+
+.markdown-content pre code { /* Code inside the block */
+  background-color: transparent;
   padding: 0;
-  font-size: inherit; /* Inherit pre's font size */
+  font-size: inherit;
+  color: inherit;
+  word-break: normal; /* Prevent breaking inside code block */
+  white-space: pre; /* Preserve whitespace */
+}
+
+/* Tables (Requires remark-gfm) */
+.markdown-content table {
+    width: auto; /* Let content decide width initially */
+    max-width: 100%; /* Prevent overflow */
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+    border: 1px solid var(--border-primary);
+}
+.markdown-content th,
+.markdown-content td {
+    border: 1px solid var(--border-primary);
+    padding: 0.5em 0.75em;
+    text-align: left;
+}
+.markdown-content th {
+    background-color: var(--bg-secondary);
+    font-weight: 600;
+}
+.markdown-content tr:nth-child(even) {
+    background-color: var(--bg-secondary); /* Subtle striping */
 }
 
 
-/* Chat Input Area Styles */
+/* --- Chat Input Area --- */
 .chat-input-area {
-  padding: 1rem 1.5rem;
-  background-color: var(--background-color); /* Match chat interface background */
-  border-top: 1px solid var(--border-color);
-  flex-shrink: 0; /* Prevent input area from shrinking */
-  position: relative; /* For potential elements inside */
+  padding: 1rem 1rem; /* Consistent padding */
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-primary);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease; /* Theme transitions */
 }
 
+/* Center the form like the chat history */
 .chat-form {
   display: flex;
-  align-items: center;
-  max-width: 800px; /* Match chat history width */
-  margin: 0 auto;
-  background-color: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: 12px; /* Rounded input container */
-  padding: 0.25rem 0.25rem 0.25rem 1rem; /* Padding inside the form */
+  /* Align items to the end (bottom) to keep button aligned with textarea bottom */
+  align-items: flex-end;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  /* Adjust padding slightly - more top/bottom for textarea */
+  padding: 0.6rem 0.6rem 0.6rem 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
 }
 
 .chat-form:focus-within {
-   border-color: var(--input-focus-border); /* Highlight on focus */
-   box-shadow: 0 0 0 1px var(--input-focus-border);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--border-focus);
 }
 
-
-.chat-form input[type="text"] {
+.chat-textarea {
   flex-grow: 1;
-  padding: 0.75rem 0; /* Vertical padding, horizontal comes from form */
-  font-size: 1rem;
   border: none;
   outline: none;
-  background-color: transparent; /* Input field is transparent */
-  color: var(--text-color);
+  background-color: transparent;
+  color: var(--text-primary);
+  font-family: inherit; /* Ensure it uses the body font */
+  font-size: 1rem;
+  line-height: 1.5; /* Match line height for consistency */
+  padding: 0.25rem 0; /* Minimal vertical padding, let height/rows control size */
+  margin: 0; /* Reset margin */
+
+  /* --- Static Height Control --- */
+  resize: none; /* Disable manual resizing handle */
+  overflow-y: auto; /* Show scrollbar when content exceeds max-height */
+  max-height: 120px; /* <<< ADJUST MAX HEIGHT AS NEEDED (e.g., 4-5 lines) */
+   /* Subtle scrollbar styling for the textarea */
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-button-secondary) transparent;
 }
 
-.chat-form input[type="text"]::placeholder {
-  color: #888;
+.chat-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-textarea::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px; /* Add margin to scrollbar track */
 }
 
+.chat-textarea::-webkit-scrollbar-thumb {
+  background-color: var(--bg-button-secondary);
+  border-radius: 10px;
+}
+
+.chat-textarea::placeholder {
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+/* Adjust button margin if needed */
 .chat-form button[type="submit"] {
-  background-color: var(--button-bg);
-  color: var(--button-text);
+  background-color: var(--bg-button-primary);
+  color: var(--text-button);
   border: none;
-  border-radius: 8px; /* Slightly less rounded than container */
-  padding: 0.5rem; /* Padding around the icon */
+  border-radius: 8px;
+  padding: 0.5rem;
   margin-left: 0.5rem;
+  /* Add align-self if alignment is off, though flex-end on parent should work */
+  /* align-self: flex-end; */
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px; /* Fixed size */
+  width: 36px;
   height: 36px;
+  flex-shrink: 0; /* Prevent button from shrinking */
   transition: background-color 0.2s ease;
+  margin-bottom: 1px; /* Small adjustment to align better with baseline */
 }
 
-.chat-form button[type="submit"]:hover {
-  background-color: var(--button-hover-bg);
+.chat-form button[type="submit"]:disabled {
+    background-color: var(--bg-button-secondary);
+    cursor: not-allowed;
+}
+
+.chat-form button[type="submit"]:not(:disabled):hover {
+  background-color: var(--bg-button-hover);
 }
 
 .chat-form button[type="submit"] svg {
-    width: 20px;
-    height: 20px;
+  width: 20px;
+  height: 20px;
+  /* Ensure SVG uses button's color */
+  stroke: currentColor; /* Use stroke if SVG paths use stroke */
+  fill: currentColor; /* Use fill if SVG paths use fill */
 }
 
 
-/* Scroll to Bottom Button */
+/* --- Scroll to Bottom Button --- */
 .scroll-to-bottom-container {
-  position: absolute; /* Position relative to chat-interface */
-  bottom: 100px; /* Adjust distance from bottom (above input area) */
+  position: absolute;
+  bottom: calc(4rem + 40px); /* Position above the input area dynamically */
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10; /* Ensure it's above chat history */
+  z-index: 20; /* Above chat content */
 }
 
 .scroll-to-bottom-button {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: rgba(52, 53, 65, 0.8); /* Semi-transparent dark */
-  backdrop-filter: blur(2px); /* Optional blur effect */
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: var(--bg-secondary); /* Use secondary background */
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary); /* Use primary text color */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.2s ease;
+  box-shadow: var(--shadow-md);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .scroll-to-bottom-button:hover {
-    background-color: rgba(52, 53, 65, 1); /* Less transparent on hover */
+  background-color: var(--bg-button-secondary); /* Use button bg on hover */
+  box-shadow: var(--shadow-md), 0 0 0 1px var(--border-primary); /* Slight ring on hover */
 }
 
 .scroll-to-bottom-button svg {
-    width: 20px;
-    height: 20px;
-    fill: white;
+  width: 22px; /* Slightly larger icon */
+  height: 22px;
+  fill: currentColor; /* Make SVG inherit button color */
 }
 
-
-/* Accessibility */
+/* --- Accessibility --- */
 .sr-only {
   position: absolute;
   width: 1px;
