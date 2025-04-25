@@ -12,6 +12,7 @@
   --bg-button-secondary-hover: #D0D0D0;
   --bg-select-disabled: #EEEEEE; /* Disabled select background */
   --bg-code: #2d2d2d;            /* Code block background */
+  --bg-edit-input: #ffffff;     /* Background for edit input */
 
   --text-primary: #111827;       /* Main text */
   --text-secondary: #6B7280;     /* Sidebar text, placeholders */
@@ -44,6 +45,8 @@ body.dark-mode {
   --bg-button-secondary-hover: #6B7280;
   --bg-select-disabled: #4B5563; /* Dark disabled select background */
   --bg-code: #111827;           /* Dark Code block background */
+  --bg-edit-input: #4B5563;     /* Dark background for edit input */
+
 
   --text-primary: #F3F4F6;      /* Dark Main text */
   --text-secondary: #9CA3AF;    /* Dark Sidebar text, placeholders */
@@ -170,26 +173,29 @@ body {
   justify-content: space-between;
   align-items: center;
   transition: background-color 0.2s ease;
+  /* Add padding to the item itself for internal spacing */
+  padding: 0 0.2rem; /* Adjust horizontal padding as needed */
 }
 
-.conversation-item:hover {
+.conversation-item:not(.editing):hover { /* Apply hover only when not editing */
   background-color: var(--bg-button-secondary);
 }
 
 /* Adjust active background if needed */
-.conversation-item.active {
+.conversation-item.active:not(.editing) {
     background-color: var(--bg-button-secondary-hover); /* Slightly darker */
     color: var(--text-primary); /* Ensure text is readable */
 }
-.conversation-item.active .session-select-button,
-.conversation-item.active .delete-session-button {
+.conversation-item.active:not(.editing) .session-select-button,
+.conversation-item.active:not(.editing) .delete-session-button,
+.conversation-item.active:not(.editing) .edit-session-button {
     color: var(--text-primary); /* Ensure buttons inherit active color */
 }
 
 
 .session-select-button {
   flex-grow: 1;
-  padding: 0.6rem 0.8rem;
+  padding: 0.6rem 0.5rem; /* Adjusted padding */
   background: none;
   border: none;
   color: var(--text-secondary); /* Default to secondary text */
@@ -201,32 +207,60 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 6px; /* Apply radius to button itself */
+  /* Remove margin if padding is handled by parent */
+  margin: 0;
 }
 /* Ensure hover applies within the button area */
 .conversation-item:hover .session-select-button {
     color: var(--text-primary); /* Darker text on hover */
 }
 
+/* --- Edit Input Styling --- */
+.session-edit-input {
+    flex-grow: 1; /* Take available space */
+    padding: 0.5rem 0.5rem; /* Match button padding */
+    font-size: 0.9rem; /* Match button font size */
+    font-weight: 500;
+    border: 1px solid var(--border-focus); /* Highlight border */
+    border-radius: 4px;
+    background-color: var(--bg-edit-input);
+    color: var(--text-primary);
+    outline: none;
+    margin-right: auto; /* Push delete button away if it were visible */
+}
 
+/* --- Edit/Delete Button Styling --- */
+.edit-session-button,
 .delete-session-button {
   background: none;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.5rem;
-  margin-left: 0.25rem; /* Reduced margin */
-  font-size: 1rem; /* Slightly larger icon */
+  padding: 0.5rem; /* Consistent padding */
+  margin-left: 0.1rem; /* Very small margin between buttons */
+  font-size: 0.9rem; /* Slightly smaller icon */
   opacity: 0.6;
   transition: opacity 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
   border-radius: 6px;
+  line-height: 1; /* Prevent extra height */
 }
 
-.conversation-item:hover .delete-session-button,
-.delete-session-button:focus {
-  opacity: 1;
-  color: var(--text-primary);
+/* Show buttons more clearly on hover of the item */
+.conversation-item:hover .edit-session-button,
+.conversation-item:hover .delete-session-button {
+    opacity: 1;
+    color: var(--text-primary);
 }
+/* Ensure focused buttons are also clear */
+.edit-session-button:focus,
+.delete-session-button:focus {
+    opacity: 1;
+    color: var(--text-primary);
+    /* Optional: add focus ring */
+    /* box-shadow: 0 0 0 2px var(--border-focus); */
+}
+
 
 .no-sessions {
   color: var(--text-secondary);

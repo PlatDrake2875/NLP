@@ -1,12 +1,12 @@
 // HIA/frontend/src/App.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Added useMemo here
 import './App.css';
 // Import custom hooks
 import { useTheme } from './hooks/useTheme';
 import { useChatSessions } from './hooks/useChatSessions';
 // Import components
 import { Sidebar } from './components/Sidebar';
-import { ChatInterface } from './components/ChatInterface';
+import { ChatInterface } from './components/ChatInterface'; // Corrected import path if needed
 
 // Define the backend API URL (consider moving to an environment variable)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Use Vite env var or default
@@ -15,14 +15,15 @@ function App() {
   // Use custom hooks to manage state and logic
   const { isDarkMode, toggleTheme } = useTheme(); // Manages theme state and body class
   const {
-    sessions,
+    sessions, // Now contains { name, history }
     activeSessionId,
     activeChatHistory,
     isSubmitting,
-    automationError, // Get automation error state
+    automationError,
     handleNewChat,
     handleSelectSession,
     handleDeleteSession,
+    handleRenameSession, // Get rename handler
     clearActiveChatHistory,
     downloadActiveChatHistory,
     handleChatSubmit: originalHandleChatSubmit, // Interactive submit
@@ -53,23 +54,18 @@ function App() {
       const modelNames = modelsData.map(m => m.name).sort();
       setAvailableModels(modelNames);
 
-      // --- Logic to set selectedModel ---
-      // 1. Try to persist selection if it's still valid
       const storedModel = localStorage.getItem('selectedModel');
       if (storedModel && modelNames.includes(storedModel)) {
           setSelectedModel(storedModel);
       }
-      // 2. If no valid stored model, or current selection is invalid, pick the first available
       else if (modelNames.length > 0 && (!selectedModel || !modelNames.includes(selectedModel))) {
         setSelectedModel(modelNames[0]);
-        localStorage.setItem('selectedModel', modelNames[0]); // Store the default
+        localStorage.setItem('selectedModel', modelNames[0]);
       }
-      // 3. If no models are available
       else if (modelNames.length === 0) {
         setSelectedModel('');
         localStorage.removeItem('selectedModel');
       }
-      // 4. If a model was already selected and is still valid, keep it (no change needed)
 
     } catch (error) {
       console.error('Error fetching models:', error);
@@ -80,18 +76,17 @@ function App() {
     } finally {
       setModelsLoading(false);
     }
-  }, [API_BASE_URL, selectedModel]); // Keep selectedModel dependency here to re-validate on model list change
+  }, [API_BASE_URL, selectedModel]);
 
   // Fetch models on initial mount
   useEffect(() => {
     fetchModels();
-  }, [fetchModels]); // fetchModels is memoized by useCallback
+  }, [fetchModels]);
 
   // --- Handle Model Selection Change ---
   const handleModelChange = (event) => {
     const newModel = event.target.value;
     setSelectedModel(newModel);
-    // Persist selection in localStorage
     if (newModel) {
         localStorage.setItem('selectedModel', newModel);
     } else {
@@ -103,40 +98,48 @@ function App() {
   const handleChatSubmitWithModel = useCallback(async (query) => {
     if (!selectedModel) {
       console.error("No model selected for chat submission.");
-      // Optionally display an error to the user in the chat window
-      // This might require modifying useChatSessions hook
       return;
     }
     await originalHandleChatSubmit(query, selectedModel);
   }, [selectedModel, originalHandleChatSubmit]);
 
+  // --- Get current session name for Header ---
+  // This is line 107 where the error occurred
+  const activeSessionName = useMemo(() => {
+      if (!activeSessionId || !sessions || !sessions[activeSessionId]) {
+          return null; // Or a default like "Chat"
+      }
+      // Use the custom name if it exists, otherwise fallback to formatting the ID
+      return sessions[activeSessionId].name || `Chat ${activeSessionId.split('-').pop()}`; // Example fallback
+  }, [activeSessionId, sessions]);
+
+
   return (
     <div className="App">
       <Sidebar
-        sessions={sessions}
+        sessions={sessions} // Pass full sessions object
         activeSessionId={activeSessionId}
-        selectedModel={selectedModel} // Pass selected model
+        selectedModel={selectedModel}
         onNewChat={handleNewChat}
         onSelectSession={handleSelectSession}
         onDeleteSession={handleDeleteSession}
-        onAutomateConversation={handleAutomateConversation} // Pass automation handler
-        isSubmitting={isSubmitting} // Pass submitting state
-        automationError={automationError} // Pass automation error
+        onRenameSession={handleRenameSession} // Pass rename handler
+        onAutomateConversation={handleAutomateConversation}
+        isSubmitting={isSubmitting}
+        automationError={automationError}
       />
       <ChatInterface
-        // Use a key that changes when the session OR the history length changes
-        // This helps ensure ChatHistory scrolls correctly after automation replaces history
         key={`${activeSessionId || 'no-session'}-${activeChatHistory.length}`}
         activeSessionId={activeSessionId}
+        // Pass the derived name to the ChatInterface/Header
+        activeSessionName={activeSessionName}
         chatHistory={activeChatHistory}
         onSubmit={handleChatSubmitWithModel} // Interactive submit
         onClearHistory={clearActiveChatHistory}
         onDownloadHistory={downloadActiveChatHistory}
         isSubmitting={isSubmitting}
-        // Pass theme state and toggle function
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
-        // --- Pass model selection props ---
         availableModels={availableModels}
         selectedModel={selectedModel}
         onModelChange={handleModelChange}

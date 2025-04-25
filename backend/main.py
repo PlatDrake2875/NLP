@@ -247,8 +247,3 @@ async def automate_conversation_endpoint(request: AutomateRequest):
 
     print(f"Finished automated conversation. Returning {len(full_result)} turns.")
     return full_result
-
-# --- Uvicorn runner (for local development) ---
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
