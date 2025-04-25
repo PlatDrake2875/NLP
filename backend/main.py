@@ -81,38 +81,3 @@ async def chat_endpoint(request: ChatRequest):
     # Use the async streaming function
     response_text = await call_gemma3_streaming(request.query)
     return {"answer": response_text}
-
-# --- If you still need the non-streaming version for fallback or testing ---
-# def call_gemma3_non_streaming(query: str) -> str:
-#     api_url = f"{OLLAMA_URL}/api/chat"
-#     payload = {
-#         "model": "gemma3",
-#         "messages": [{"role": "user", "content": query}],
-#         "stream": False # Explicitly non-streaming
-#     }
-#     try:
-#         response = requests.post(api_url, json=payload, timeout=60) # Add timeout
-#         response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-#         data = response.json()
-#         # Adjust based on actual non-streaming response structure
-#         if "message" in data and "content" in data["message"]:
-#             return data["message"]["content"]
-#         elif "response" in data: # Some Ollama versions might use 'response' key
-#             return data["response"]
-#         else:
-#              print("Unexpected non-streaming response format:", data)
-#              return "Unexpected response format from model."
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error calling Ollama (non-streaming): {e}")
-#         return f"Error calling Ollama service: {e}"
-#     except Exception as e:
-#         print(f"An unexpected error occurred (non-streaming): {e}")
-#         return f"An unexpected error occurred: {e}"
-
-# @app.post("/api/chat_non_stream")
-# async def chat_endpoint_non_stream(request: ChatRequest):
-#     response_text = call_gemma3_non_streaming(request.query)
-#     return {"answer": response_text}
-# --- End of non-streaming version ---
-
-# To run (if this file is named main.py): uvicorn main:app --reload
