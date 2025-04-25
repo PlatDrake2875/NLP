@@ -1,11 +1,50 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* src/index.css */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* --- Base & Variables --- */
+:root {
+  /* Light Theme (Default) */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9F9F9;
+  --bg-tertiary: #F1F0F0;
+  --bg-accent: #DCF8C6;
+  --bg-input: #FFFFFF;
+  --bg-button-primary: #4A90E2;
+  --bg-button-hover: #357ABD;
+  --bg-button-secondary: #E0E0E0;
+  --bg-button-secondary-hover: #D0D0D0;
+  --bg-select-disabled: #EEEEEE;
+  --bg-code: #2d2d2d;
+  --bg-edit-input: #ffffff;
+
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-accent: #000000;
+  --text-button: #FFFFFF;
+  --text-disabled: #9CA3AF;
+  --text-code: #f0f0f0;
+  --text-error: #e53e3e;
+
+  --border-primary: #E5E7EB;
+  --border-focus: #4A90E2;
+  --border-select: #CCCCCC;
+  --border-error: #e53e3e;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  /* Base font settings */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  font-size: 16px;
+
+  color-scheme: light; /* Default to light */
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,62 +52,83 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark Mode Variables */
+body.dark-mode {
+  --bg-primary: #1F2937;
+  --bg-secondary: #111827;
+  --bg-tertiary: #374151;
+  --bg-accent: #059669;
+  --bg-input: #374151;
+  --bg-button-primary: #10B981;
+  --bg-button-hover: #059669;
+  --bg-button-secondary: #4B5563;
+  --bg-button-secondary-hover: #6B7280;
+  --bg-select-disabled: #4B5563;
+  --bg-code: #111827;
+  --bg-edit-input: #4B5563;
 
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-accent: #FFFFFF;
+  --text-button: #FFFFFF;
+  --text-disabled: #6B7280;
+  --text-code: #d4d4d4;
+  --text-error: #fca5a5;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+  --border-primary: #4B5563;
+  --border-focus: #10B981;
+  --border-select: #6B7280;
+  --border-error: #fca5a5;
+
+  color-scheme: dark;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 }
-a:hover {
-  color: #535bf2;
-}
 
-
-/* HIA/frontend/src/index.css */
-body {
+/* Basic Reset */
+* {
+  box-sizing: border-box;
   margin: 0;
-  /* display: flex; */  /* Removed */
-  /* place-items: center; */ /* Removed */
-  min-width: 320px;
-  /* min-height: 100vh; */ /* Keep or remove, App.css handles height */
-  /* Or simply leave the body selector empty in index.css if
-     App.css handles all necessary body styles */
+  padding: 0;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+html, body {
+    height: 100%;
+    overflow: hidden; /* Prevent scrollbars on the body itself */
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+body {
+  /* Font family is set in :root now */
+  background-color: var(--bg-primary); /* Ensure body bg matches theme */
+  color: var(--text-primary); /* Ensure body text matches theme */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth theme transition */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Global Scrollbar Styling (Optional) */
+/* You can keep these global or move them to specific components if needed */
+/* ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--bg-button-secondary);
+  border-radius: 10px;
+  border: 2px solid var(--bg-primary);
+} */
+
+/* --- Accessibility --- */
+/* Keep this global as it's a utility class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

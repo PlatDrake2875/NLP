@@ -1,0 +1,37 @@
+/* src/components/ScrollToBottomButton.module.css */
+
+.scrollToBottomContainer { /* Renamed */
+    position: absolute;
+    /* Positioning needs careful adjustment based on layout */
+    bottom: 100px; /* Example: Adjust based on ChatForm height */
+    /* Center relative to the parent (.chatInterface) */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+  }
+  
+  .scrollToBottomButton { /* Renamed */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.3s ease;
+  }
+  .scrollToBottomButton:hover {
+    background-color: var(--bg-button-secondary);
+    box-shadow: var(--shadow-md), 0 0 0 1px var(--border-primary);
+  }
+  
+  .scrollToBottomButton svg { /* Target SVG inside */
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+  

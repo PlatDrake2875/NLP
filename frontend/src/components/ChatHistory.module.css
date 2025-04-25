@@ -1,0 +1,154 @@
+/* src/components/ChatHistory.module.css */
+
+/* Styles for the main scrollable container are in ChatInterface.module.css */
+
+.chatHistory { /* Renamed */
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.messageContainer { /* Renamed */
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.messageContainer.user { /* Modifier class */
+  justify-content: flex-end;
+}
+
+.messageContainer.bot { /* Modifier class */
+  justify-content: flex-start;
+}
+
+.chatMessage { /* Renamed */
+  padding: 0.75rem 1rem;
+  border-radius: 18px;
+  max-width: 85%;
+  word-wrap: break-word; /* Use break-word for long unbreakable strings */
+  overflow-wrap: break-word; /* More modern property */
+  position: relative;
+  line-height: 1.5;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.chatMessage.user { /* Modifier class */
+  background-color: var(--bg-accent);
+  color: var(--text-accent);
+  border-bottom-right-radius: 6px;
+}
+
+.chatMessage.bot { /* Modifier class */
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-bottom-left-radius: 6px;
+}
+
+/* Style bot messages containing errors differently */
+/* Using :global selector might be needed if the content isn't directly stylable */
+/* Or preferably, add an 'error' class to the chatMessage itself in JSX */
+.chatMessage.bot.error { /* Add .error class in ChatHistory.jsx */
+    background-color: #fed7d7; /* Light red background */
+    color: #9b2c2c; /* Dark red text */
+    border: 1px solid var(--border-error);
+}
+/* Dark mode error style */
+:global(body.dark-mode) .chatMessage.bot.error { /* Use :global for theme class */
+    background-color: #4a2a2a; /* Dark red background */
+    color: var(--text-error); /* Use dark theme error text */
+    border: 1px solid var(--border-error);
+}
+
+
+/* --- Markdown Content Styling --- */
+/* These styles apply *within* a .markdownContent element */
+.markdownContent p {
+  margin-bottom: 0.5em;
+}
+.markdownContent p:last-child {
+  margin-bottom: 0;
+}
+.markdownContent ul,
+.markdownContent ol {
+  margin-left: 1.25em;
+  margin-bottom: 0.75em;
+  padding-left: 0.5em;
+}
+.markdownContent li {
+    margin-bottom: 0.25em;
+}
+.markdownContent a {
+    color: var(--bg-button-primary);
+    text-decoration: none;
+}
+.markdownContent a:hover {
+    text-decoration: underline;
+}
+
+/* Inline code */
+.markdownContent code:not(pre code) {
+  background-color: var(--bg-button-secondary);
+  color: var(--text-primary);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  word-break: break-all;
+}
+/* Code block container */
+.markdownContent pre {
+  background-color: var(--bg-code);
+  color: var(--text-code);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.75em 0;
+  font-size: 0.9em;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-secondary) transparent;
+}
+.markdownContent pre::-webkit-scrollbar {
+  height: 6px;
+}
+.markdownContent pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+.markdownContent pre::-webkit-scrollbar-thumb {
+  background-color: var(--text-secondary);
+  border-radius: 10px;
+}
+
+/* Code inside the block */
+.markdownContent pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  word-break: normal;
+  white-space: pre;
+}
+
+/* Tables (Requires remark-gfm) */
+.markdownContent table {
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+    border: 1px solid var(--border-primary);
+}
+.markdownContent th,
+.markdownContent td {
+    border: 1px solid var(--border-primary);
+    padding: 0.5em 0.75em;
+    text-align: left;
+}
+.markdownContent th {
+    background-color: var(--bg-secondary);
+    font-weight: 600;
+}
+.markdownContent tr:nth-child(even) {
+    background-color: var(--bg-secondary);
+}

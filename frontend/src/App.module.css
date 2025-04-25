@@ -1,0 +1,11 @@
+/* src/App.module.css */
+
+.App {
+    display: flex;
+    height: 100vh; /* Use viewport height */
+    overflow: hidden; /* Prevent App container itself from scrolling */
+    background-color: var(--bg-primary); /* Ensure App background matches theme */
+  }
+  
+  /* Add any other styles specific ONLY to the direct children layout within App.jsx */
+  

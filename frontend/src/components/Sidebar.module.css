@@ -1,0 +1,292 @@
+/* src/components/Sidebar.module.css */
+
+.sidebar {
+    width: 260px;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-primary);
+    flex-shrink: 0;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .newChatButton { /* Renamed from new-chat-button */
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    margin-bottom: 1rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    width: 100%;
+  }
+  
+  .newChatButton:hover {
+    background-color: var(--bg-button-secondary);
+    border-color: var(--bg-button-secondary);
+  }
+  
+  .conversationMenu { /* Renamed */
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-button-secondary) transparent;
+  }
+  .conversationMenu::-webkit-scrollbar {
+    width: 6px;
+  }
+  .conversationMenu::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .conversationMenu::-webkit-scrollbar-thumb {
+    background-color: var(--bg-button-secondary);
+    border-radius: 10px;
+  }
+  
+  .conversationMenu h2 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    padding: 0 0.5rem;
+  }
+  
+  .conversationMenu ul {
+    list-style: none;
+  }
+  
+  .conversationItem { /* Renamed */
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    padding: 0 0.2rem;
+  }
+  
+  .conversationItem:not(.editing):hover {
+    background-color: var(--bg-button-secondary);
+  }
+  
+  .conversationItem.active:not(.editing) { /* Use :global() or handle active class differently if needed */
+      background-color: var(--bg-button-secondary-hover);
+      color: var(--text-primary);
+  }
+  /* Note: Selectors like .active .button need care with CSS Modules */
+  /* It's often better to apply active styles directly via conditional classNames */
+  .conversationItem.active:not(.editing) .sessionSelectButton, /* Might not work as expected */
+  .conversationItem.active:not(.editing) .deleteSessionButton,
+  .conversationItem.active:not(.editing) .editSessionButton {
+      /* Consider applying active styles directly in JSX instead */
+      /* color: var(--text-primary); */
+  }
+  
+  
+  .sessionSelectButton { /* Renamed */
+    flex-grow: 1;
+    padding: 0.6rem 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 6px;
+    margin: 0;
+  }
+  /* Hover effect needs to target the button directly */
+  .sessionSelectButton:hover {
+      color: var(--text-primary);
+  }
+  .conversationItem.active .sessionSelectButton { /* Target active button directly */
+       color: var(--text-primary);
+  }
+  
+  
+  .sessionEditInput { /* Renamed */
+      flex-grow: 1;
+      padding: 0.5rem 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: 1px solid var(--border-focus);
+      border-radius: 4px;
+      background-color: var(--bg-edit-input);
+      color: var(--text-primary);
+      outline: none;
+      margin-right: auto;
+  }
+  
+  .editSessionButton, /* Renamed */
+  .deleteSessionButton { /* Renamed */
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-left: 0.1rem;
+    font-size: 0.9rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  
+  /* Show buttons on item hover */
+  .conversationItem:hover .editSessionButton,
+  .conversationItem:hover .deleteSessionButton {
+      opacity: 1;
+      color: var(--text-primary);
+  }
+  /* Style focused buttons */
+  .editSessionButton:focus,
+  .deleteSessionButton:focus {
+      opacity: 1;
+      color: var(--text-primary);
+  }
+  /* Style buttons in active item */
+  .conversationItem.active .editSessionButton,
+  .conversationItem.active .deleteSessionButton {
+       color: var(--text-primary);
+       opacity: 1; /* Ensure visible when active */
+  }
+  
+  
+  .noSessions { /* Renamed */
+    color: var(--text-secondary);
+    padding: 0.6rem 0.8rem;
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+  
+  /* --- Automation Section --- */
+  .automationSection { /* Renamed */
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+  }
+  
+  .automationHeader { /* Renamed */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0.5rem;
+      margin-bottom: 0.25rem;
+  }
+  
+  .automationSection h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin: 0;
+      padding: 0;
+  }
+  
+  .uploadJsonButton { /* Renamed */
+      background-color: transparent;
+      border: 1px solid var(--border-primary);
+      color: var(--text-secondary);
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  .uploadJsonButton:hover:not(:disabled) {
+      background-color: var(--bg-button-secondary);
+      border-color: var(--bg-button-secondary);
+      color: var(--text-primary);
+  }
+  .uploadJsonButton:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+  }
+  
+  .automationLabel { /* Renamed */
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      padding: 0 0.5rem;
+  }
+  
+  .automationTextarea { /* Renamed */
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid var(--border-primary);
+      padding: 0.5rem;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.8rem;
+      background-color: var(--bg-input);
+      color: var(--text-primary);
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .automationTextarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 1px var(--border-focus);
+  }
+  .automationTextarea:disabled {
+      background-color: var(--bg-select-disabled);
+      color: var(--text-disabled);
+      cursor: not-allowed;
+  }
+  
+  .automationButton { /* Renamed */
+      background-color: var(--bg-button-primary);
+      color: var(--text-button);
+      border: none;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: background-color 0.2s ease;
+      width: 100%;
+  }
+  
+  .automationButton:hover:not(:disabled) {
+      background-color: var(--bg-button-hover);
+  }
+  
+  .automationButton:disabled {
+      background-color: var(--bg-button-secondary);
+      color: var(--text-disabled);
+      cursor: not-allowed;
+  }
+  
+  .automationErrorMessage { /* Renamed */
+      color: var(--text-error);
+      font-size: 0.8rem;
+      padding: 0 0.5rem;
+      margin-top: -0.25rem;
+      word-break: break-word;
+  }
+  .automationWarning { /* Renamed */
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      padding: 0 0.5rem;
+      margin-top: -0.25rem;
+      font-style: italic;
+  }
+  
+  

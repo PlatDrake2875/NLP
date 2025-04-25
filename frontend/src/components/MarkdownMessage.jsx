@@ -1,13 +1,14 @@
+// HIA/frontend/src/components/MarkdownMessage.jsx
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm'; // Optional: for GitHub Flavored Markdown (tables, etc.)
+import remarkGfm from 'remark-gfm';
 
-export const MarkdownMessage = ({ text }) => {
+// Accept markdownClassName prop from parent (ChatHistory)
+export const MarkdownMessage = ({ text, markdownClassName }) => {
   return (
-    // Removed the old background/padding, handled by .chat-message CSS
-    <div className="markdown-content">
-      {/* Added remarkGfm for better markdown support */}
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+    // Apply the passed className (e.g., styles.markdownContent)
+    <div className={markdownClassName || ''}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{text || ''}</ReactMarkdown> {/* Handle null/undefined text */}
     </div>
   );
 };

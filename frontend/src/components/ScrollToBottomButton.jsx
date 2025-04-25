@@ -1,23 +1,24 @@
+// HIA/frontend/src/components/ScrollToBottomButton.jsx
 import React, { useState, useEffect } from 'react';
+import styles from './ScrollToBottomButton.module.css'; // Import CSS Module
 
 export const ScrollToBottomButton = ({ containerRef, targetRef }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const containerElement = containerRef.current;
-    const targetElement = targetRef.current; // The element at the bottom to observe
+    const targetElement = targetRef.current;
 
     if (!containerElement || !targetElement) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Show button if the target element is NOT visible within the container
         setIsVisible(!entry.isIntersecting);
       },
       {
-        root: containerElement, // Observe within the chat container
-        rootMargin: '0px',      // No margin
-        threshold: 0.1,        // Trigger when 10% visible/invisible
+        root: containerElement,
+        rootMargin: '0px',
+        threshold: 0.1, // Show when less than 10% of the target is visible
       }
     );
 
@@ -40,15 +41,14 @@ export const ScrollToBottomButton = ({ containerRef, targetRef }) => {
   if (!isVisible) return null;
 
   return (
-    // Positioned relative to the chat-interface container
-    <div className="scroll-to-bottom-container">
+    // Apply styles using the imported object
+    <div className={styles.scrollToBottomContainer}>
       <button
         onClick={scrollToBottom}
-        className="scroll-to-bottom-button"
+        className={styles.scrollToBottomButton} // Use module style
         aria-label="Scroll to bottom"
       >
-        {/* Simple down arrow SVG */}
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"> {/* Changed fill */}
           <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
         </svg>
       </button>

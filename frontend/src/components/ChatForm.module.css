@@ -1,0 +1,100 @@
+/* src/components/ChatForm.module.css */
+
+.chatForm { /* Renamed */
+    max-width: 800px; /* Match chat history max-width */
+    margin: 0 auto; /* Center horizontally */
+    display: flex;
+    align-items: flex-end;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 0.6rem 0.6rem 0.6rem 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+  }
+  
+  .chatForm:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px var(--border-focus);
+  }
+  
+  .chatTextarea { /* Renamed */
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.5;
+    padding: 0.25rem 0;
+    margin: 0;
+    resize: none;
+    overflow-y: auto;
+    max-height: 120px; /* Adjust as needed */
+    scrollbar-width: thin;
+    scrollbar-color: var(--bg-button-secondary) transparent;
+  }
+  
+  .chatTextarea::-webkit-scrollbar {
+    width: 6px;
+  }
+  .chatTextarea::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px;
+  }
+  .chatTextarea::-webkit-scrollbar-thumb {
+    background-color: var(--bg-button-secondary);
+    border-radius: 10px;
+  }
+  
+  .chatTextarea::placeholder {
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+  }
+  .chatTextarea:disabled {
+      background-color: transparent;
+      color: var(--text-disabled);
+      cursor: not-allowed;
+  }
+  .chatTextarea:disabled::placeholder {
+      color: var(--text-disabled);
+      opacity: 0.7;
+  }
+  
+  .submitButton { /* Added specific class for submit button */
+    background-color: var(--bg-button-primary);
+    color: var(--text-button);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+    margin-bottom: 1px; /* Small alignment adjustment */
+  }
+  
+  .submitButton:disabled {
+      background-color: var(--bg-button-secondary);
+      color: var(--text-disabled);
+      cursor: not-allowed;
+  }
+  
+  .submitButton:not(:disabled):hover {
+    background-color: var(--bg-button-hover);
+  }
+  
+  .submitButton svg { /* Target SVG inside the button */
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: currentColor; /* Adjust fill/stroke based on SVG */
+  }
+  
+  

@@ -1,54 +1,61 @@
+// HIA/frontend/src/components/ChatHistory.jsx
 import React, { useEffect, useRef, useLayoutEffect } from 'react';
-import { MarkdownMessage } from './MarkdownMessage';
+import styles from './ChatHistory.module.css'; // Import CSS Module
+import { MarkdownMessage } from './MarkdownMessage'; // Keep MarkdownMessage separate
 
 export const ChatHistory = ({ chatHistory }) => {
-  const endOfMessagesRef = useRef(null); // Ref to scroll to the bottom
-  const chatHistoryRef = useRef(null); // Ref to the chat history container itself
+  const endOfMessagesRef = useRef(null);
+  const chatHistoryContainerRef = useRef(null); // Ref for the scroll container
 
-  // Use useLayoutEffect for scrolling to ensure it happens after render but before paint
   useLayoutEffect(() => {
-    const chatContainer = chatHistoryRef.current;
-    if (!chatContainer) return;
+    const chatContainer = chatHistoryContainerRef.current;
+    if (!chatContainer || !endOfMessagesRef.current) return;
 
-    // Check if the user is scrolled near the bottom before auto-scrolling
-    const scrollThreshold = 100; // Pixels from bottom
-    const isScrolledNearBottom = chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < scrollThreshold;
+    // Determine if user is near the bottom before auto-scrolling
+    const scrollThreshold = 150; // Pixels from bottom tolerance
+    const isNearBottom = chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < scrollThreshold;
 
-    // Only auto-scroll if near the bottom or if it's the initial load/very few messages
-    if (isScrolledNearBottom || chatContainer.scrollHeight < chatContainer.clientHeight + scrollThreshold) {
-        endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // Scroll to bottom if near bottom or initial load/few messages
+    if (isNearBottom) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [chatHistory]); // Dependency on chatHistory ensures scroll on update
+    // If not near bottom, only scroll if it's essentially the first message load
+    else if (chatContainer.scrollHeight <= chatContainer.clientHeight + scrollThreshold) {
+         endOfMessagesRef.current.scrollIntoView({ behavior: 'auto', block: 'end' }); // Use auto for initial load
+    }
 
-  // --- Add console log here ---
-  console.log("ChatHistory rendering with history:", chatHistory);
-  // --- End console log ---
+  }, [chatHistory]); // Scroll when history changes
 
   return (
-    // Add ref to the container
-    <div className="chat-history" ref={chatHistoryRef}>
-      {/* Ensure chatHistory is an array before mapping */}
-      {!Array.isArray(chatHistory) && (
-          <div className="message-container system-error"> {/* Optional: Style system errors */}
-             <div className="chat-message bot">
-                <p>Error: Chat history is unavailable.</p>
-             </div>
-          </div>
-      )}
-      {Array.isArray(chatHistory) && chatHistory.map((entry, index) => {
-          // --- Add log inside map ---
-          // console.log(`Rendering message ${index}:`, entry);
-          // --- End log ---
-          // Ensure entry is an object before accessing properties
-          return (typeof entry === 'object' && entry !== null && (
-              <div key={entry.id || `msg-${index}`} className={`message-container ${entry.sender || 'unknown'}`}>
-                  <div className={`chat-message ${entry.sender || 'unknown'}`}>
-                      {/* Ensure text exists and pass empty string if not */}
-                      <MarkdownMessage text={entry.text ?? ''} />
+    // Apply styles using the imported object
+    // Note: The parent (.chatArea) handles the scrolling, this is just the content list
+    <div className={styles.chatHistory} ref={chatHistoryContainerRef}>
+      {!Array.isArray(chatHistory) || chatHistory.length === 0 ? (
+          // Optional: Add a message for empty history if needed
+          // <div className={styles.emptyHistory}>Start chatting...</div>
+          null // Or render nothing
+      ) : (
+          chatHistory.map((entry, index) => {
+              // Basic check for valid entry structure
+              if (typeof entry !== 'object' || entry === null || !entry.sender || !entry.text) {
+                  console.warn("Skipping invalid chat history entry:", entry);
+                  return null; // Skip rendering invalid entries
+              }
+
+              // Combine base and modifier classes
+              const messageContainerClasses = `${styles.messageContainer} ${entry.sender === 'user' ? styles.user : styles.bot}`;
+              const chatMessageClasses = `${styles.chatMessage} ${entry.sender === 'user' ? styles.user : styles.bot} ${entry.text.startsWith('⚠️ Error:') ? styles.error : ''}`; // Add error class conditionally
+
+              return (
+                  <div key={entry.id || `msg-${index}`} className={messageContainerClasses}>
+                      <div className={chatMessageClasses}>
+                          {/* Apply markdownContent class to the wrapper inside MarkdownMessage */}
+                          <MarkdownMessage text={entry.text} markdownClassName={styles.markdownContent} />
+                      </div>
                   </div>
-              </div>
-          ));
-       })}
+              );
+          })
+      )}
       {/* Empty div at the end to help scrolling to the bottom */}
       <div ref={endOfMessagesRef} />
     </div>

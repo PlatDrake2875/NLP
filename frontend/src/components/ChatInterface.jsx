@@ -1,5 +1,7 @@
 // HIA/frontend/src/components/ChatInterface.jsx
 import React, { useRef } from 'react';
+import styles from './ChatInterface.module.css'; // Import CSS Module
+
 import { Header } from './Header';
 import { ChatHistory } from './ChatHistory';
 import { ChatForm } from './ChatForm';
@@ -7,51 +9,57 @@ import { ScrollToBottomButton } from './ScrollToBottomButton';
 
 export function ChatInterface({
   activeSessionId,
-  chatHistory, // Receive chatHistory from App.jsx
-  onSubmit, // This now expects a function that already knows the model
+  activeSessionName, // Receive calculated name from App
+  chatHistory,
+  onSubmit,
   onClearHistory,
   onDownloadHistory,
-  isSubmitting, // Receive submitting state
-  // --- Receive theme props ---
+  isSubmitting,
   isDarkMode,
   toggleTheme,
-  // --- Receive model selection props ---
   availableModels,
   selectedModel,
   onModelChange,
   modelsLoading,
   modelsError,
+  isInitialized // Receive initialization status
 }) {
   const chatContainerRef = useRef(null);
-  const bottomOfChatRef = useRef(null);
+  const bottomOfChatRef = useRef(null); // Ref for scroll-to-bottom button logic
 
-  // Determine if the main chat interaction area should be disabled
-  const isDisabled = !activeSessionId || modelsLoading || !!modelsError || isSubmitting;
+  // Determine general disabled state
+  const isDisabled = !isInitialized || !activeSessionId || modelsLoading || !!modelsError || isSubmitting;
+  // Determine if form specifically should be disabled
+  const isFormDisabled = isDisabled || !selectedModel;
 
   return (
-    <main className="chat-interface">
+    // Apply styles using the imported object
+    <main className={styles.chatInterface}>
       <Header
-        activeSessionId={activeSessionId}
-        chatHistory={chatHistory} // Pass chatHistory down to Header
+        // Pass activeSessionName instead of activeSessionId for title display
+        activeSessionName={activeSessionName}
+        chatHistory={chatHistory}
         clearChatHistory={onClearHistory}
         downloadChatHistory={onDownloadHistory}
-        disabled={isDisabled} // Pass combined disabled state
-        // --- Pass theme props down ---
+        disabled={isDisabled} // General disabled state for header actions
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
-        // --- Pass model props down ---
         availableModels={availableModels}
         selectedModel={selectedModel}
         onModelChange={onModelChange}
         modelsLoading={modelsLoading}
         modelsError={modelsError}
       />
-      <div className="chat-area" ref={chatContainerRef}>
-          {activeSessionId ? (
-              // Pass chatHistory to ChatHistory component as well
+      {/* Use chatArea style */}
+      <div className={styles.chatArea} ref={chatContainerRef}>
+          {!isInitialized ? (
+              <div className={styles.noChatSelected}> {/* Use module style */}
+                  <p>Loading sessions...</p>
+              </div>
+          ) : activeSessionId ? (
               <ChatHistory chatHistory={chatHistory} />
            ) : (
-              <div className="no-chat-selected">
+              <div className={styles.noChatSelected}> {/* Use module style */}
                 <p>Select a chat or start a new one.</p>
               </div>
            )
@@ -60,20 +68,19 @@ export function ChatInterface({
         <div ref={bottomOfChatRef} style={{ height: '1px' }} />
       </div>
 
-        {/* Conditionally render input area only if a chat is selected */}
-        {activeSessionId && (
-          <div className="chat-input-area">
-              {/* Pass onSubmit directly - it now includes the model logic */}
-              {/* Disable form if no model selected, loading, error, no active session, or submitting */}
+      {/* Conditionally render input area only if initialized and a chat is selected */}
+      {isInitialized && activeSessionId && (
+          // Use chatInputArea style
+          <div className={styles.chatInputArea}>
               <ChatForm
                 onSubmit={onSubmit}
-                disabled={!selectedModel || isDisabled}
+                disabled={isFormDisabled} // Pass specific disabled state for form
               />
           </div>
         )}
 
-       {/* Only show scroll button if there's an active chat */}
-       {activeSessionId && (
+       {/* Only show scroll button if initialized and there's an active chat */}
+       {isInitialized && activeSessionId && (
          <ScrollToBottomButton
              containerRef={chatContainerRef}
              targetRef={bottomOfChatRef}
