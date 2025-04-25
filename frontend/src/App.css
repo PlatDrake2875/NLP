@@ -19,10 +19,13 @@
   --text-button: #FFFFFF;       /* Text on primary buttons */
   --text-disabled: #9CA3AF;      /* Disabled text color */
   --text-code: #f0f0f0;          /* Code block text */
+  --text-error: #e53e3e;         /* Error text color */
 
   --border-primary: #E5E7EB;     /* Main borders (sidebar, header, input) */
   --border-focus: #4A90E2;       /* Input focus highlight */
   --border-select: #CCCCCC;      /* Select border */
+  --border-error: #e53e3e;       /* Error border color */
+
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -48,10 +51,14 @@ body.dark-mode {
   --text-button: #FFFFFF;      /* Dark Text on primary buttons */
   --text-disabled: #6B7280;      /* Dark disabled text color */
   --text-code: #d4d4d4;         /* Dark Code block text */
+  --text-error: #fca5a5;         /* Dark Error text color */
+
 
   --border-primary: #4B5563;    /* Dark Main borders (sidebar, header, input) */
   --border-focus: #10B981;      /* Dark Input focus highlight */
   --border-select: #6B7280;      /* Dark select border */
+  --border-error: #fca5a5;       /* Dark Error border color */
+
 
   /* Ensure color scheme preference is set for dark mode */
   color-scheme: dark;
@@ -228,6 +235,127 @@ body {
   font-size: 0.9rem;
 }
 
+/* --- Automation Section --- */
+.automation-section {
+    margin-top: auto; /* Pushes this section to the bottom */
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* Space between elements */
+}
+
+/* New style for the header containing title and upload button */
+.automation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0.5rem; /* Match h2 padding */
+    margin-bottom: 0.25rem; /* Align with h2 margin */
+}
+
+.automation-section h2 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin: 0; /* Remove margin as it's handled by header */
+    padding: 0; /* Remove padding as it's handled by header */
+}
+
+/* Style for the upload button */
+.upload-json-button {
+    background-color: transparent;
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    padding: 0.2rem 0.5rem; /* Smaller padding */
+    border-radius: 6px;
+    font-size: 0.8rem; /* Smaller font */
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.upload-json-button:hover:not(:disabled) {
+    background-color: var(--bg-button-secondary);
+    border-color: var(--bg-button-secondary);
+    color: var(--text-primary);
+}
+.upload-json-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+.automation-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0 0.5rem;
+}
+
+.automation-textarea {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border-primary);
+    padding: 0.5rem;
+    font-family: 'Courier New', Courier, monospace; /* Monospace for JSON */
+    font-size: 0.8rem;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    resize: vertical; /* Allow vertical resize */
+    min-height: 80px;
+    transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+.automation-textarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 1px var(--border-focus);
+}
+.automation-textarea:disabled {
+    background-color: var(--bg-select-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.automation-button {
+    background-color: var(--bg-button-primary);
+    color: var(--text-button);
+    border: none;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s ease;
+    width: 100%;
+}
+
+.automation-button:hover:not(:disabled) {
+    background-color: var(--bg-button-hover);
+}
+
+.automation-button:disabled {
+    background-color: var(--bg-button-secondary);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.automation-error-message {
+    color: var(--text-error);
+    font-size: 0.8rem;
+    padding: 0 0.5rem;
+    margin-top: -0.25rem; /* Reduce gap slightly */
+    word-break: break-word;
+}
+.automation-warning {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    padding: 0 0.5rem;
+    margin-top: -0.25rem; /* Reduce gap slightly */
+    font-style: italic;
+}
+
 
 /* --- Chat Interface --- */
 .chat-interface {
@@ -236,6 +364,7 @@ body {
   flex-direction: column; /* Stacks children vertically */
   overflow: hidden;  /* Prevents internal content from breaking the layout */
   min-width: 0;      /* Sometimes helps flex items shrink/grow correctly */
+  position: relative; /* Needed for absolute positioning of scroll button */
 }
 
 /* --- Chat Header --- */
@@ -305,7 +434,7 @@ body {
 }
 
 .model-error-indicator {
-  color: #e53e3e; /* Red color for error */
+  color: var(--text-error); /* Use error variable */
   font-size: 1rem;
   cursor: help; /* Indicate hoverable for tooltip */
 }
@@ -424,6 +553,18 @@ body {
   color: var(--text-primary);
   border-bottom-left-radius: 6px; /* Slightly flattened corner */
 }
+/* Style bot messages containing errors differently */
+.chat-message.bot:has(> .markdown-content:first-child:contains("⚠️")) {
+    background-color: #fed7d7; /* Light red background */
+    color: #9b2c2c; /* Dark red text */
+    border: 1px solid var(--border-error);
+}
+body.dark-mode .chat-message.bot:has(> .markdown-content:first-child:contains("⚠️")) {
+    background-color: #4a2a2a; /* Dark red background */
+    color: var(--text-error); /* Use dark theme error text */
+    border: 1px solid var(--border-error);
+}
+
 
 /* --- Markdown Content Styling --- */
 .markdown-content {
@@ -528,6 +669,8 @@ body {
 
 /* Center the form like the chat history */
 .chat-form {
+  max-width: 800px; /* Match chat history max-width */
+  margin: 0 auto; /* Center horizontally */
   display: flex;
   /* Align items to the end (bottom) to keep button aligned with textarea bottom */
   align-items: flex-end;
@@ -583,6 +726,16 @@ body {
   color: var(--text-secondary);
   transition: color 0.3s ease;
 }
+.chat-textarea:disabled {
+    background-color: transparent; /* Ensure disabled looks consistent */
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+.chat-textarea:disabled::placeholder {
+    color: var(--text-disabled);
+    opacity: 0.7;
+}
+
 
 /* Adjust button margin if needed */
 .chat-form button[type="submit"] {
@@ -628,11 +781,11 @@ body {
 .scroll-to-bottom-container {
   position: absolute;
   /* Adjust bottom position based on input area height - might need JS or be approximate */
-  bottom: 80px; /* Example fixed position - adjust as needed */
-  /* Or use calc if input area height is predictable */
-  /* bottom: calc(var(--chat-input-area-height, 70px) + 1rem); */
-  left: 50%; /* Center relative to chat-interface */
-  transform: translateX(-50%);
+  bottom: 100px; /* Example fixed position - adjust as needed, account for input area */
+  /* Center horizontally relative to the chat-interface main area */
+  /* Calculate left based on sidebar width + half of remaining width */
+   left: calc(260px + (100% - 260px) / 2); /* Adjust 260px if sidebar width changes */
+  transform: translateX(-50%); /* Fine-tune centering */
   z-index: 20; /* Above chat content */
 }
 
@@ -673,4 +826,3 @@ body {
   white-space: nowrap;
   border: 0;
 }
-
