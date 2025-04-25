@@ -8,18 +8,21 @@
   --bg-input: #FFFFFF;          /* Input field background */
   --bg-button-primary: #4A90E2;  /* Main action buttons */
   --bg-button-hover: #357ABD;
-  --bg-button-secondary: #E0E0E0;/* Less prominent buttons (header) */
+  --bg-button-secondary: #E0E0E0;/* Less prominent buttons (header, select bg) */
   --bg-button-secondary-hover: #D0D0D0;
+  --bg-select-disabled: #EEEEEE; /* Disabled select background */
   --bg-code: #2d2d2d;            /* Code block background */
 
   --text-primary: #111827;       /* Main text */
   --text-secondary: #6B7280;     /* Sidebar text, placeholders */
   --text-accent: #000000;        /* Text on accent backgrounds (user bubble) */
   --text-button: #FFFFFF;       /* Text on primary buttons */
+  --text-disabled: #9CA3AF;      /* Disabled text color */
   --text-code: #f0f0f0;          /* Code block text */
 
   --border-primary: #E5E7EB;     /* Main borders (sidebar, header, input) */
   --border-focus: #4A90E2;       /* Input focus highlight */
+  --border-select: #CCCCCC;      /* Select border */
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -34,18 +37,21 @@ body.dark-mode {
   --bg-input: #374151;         /* Dark Input field background */
   --bg-button-primary: #10B981; /* Dark Main action buttons */
   --bg-button-hover: #059669;
-  --bg-button-secondary: #4B5563;/* Dark Less prominent buttons (header) */
+  --bg-button-secondary: #4B5563;/* Dark Less prominent buttons (header, select bg) */
   --bg-button-secondary-hover: #6B7280;
+  --bg-select-disabled: #4B5563; /* Dark disabled select background */
   --bg-code: #111827;           /* Dark Code block background */
 
   --text-primary: #F3F4F6;      /* Dark Main text */
   --text-secondary: #9CA3AF;    /* Dark Sidebar text, placeholders */
   --text-accent: #FFFFFF;       /* Dark Text on accent backgrounds (user bubble) */
   --text-button: #FFFFFF;      /* Dark Text on primary buttons */
+  --text-disabled: #6B7280;      /* Dark disabled text color */
   --text-code: #d4d4d4;         /* Dark Code block text */
 
   --border-primary: #4B5563;    /* Dark Main borders (sidebar, header, input) */
   --border-focus: #10B981;      /* Dark Input focus highlight */
+  --border-select: #6B7280;      /* Dark select border */
 
   /* Ensure color scheme preference is set for dark mode */
   color-scheme: dark;
@@ -235,7 +241,7 @@ body {
 /* --- Chat Header --- */
 .chat-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Space out title and controls */
   align-items: center;
   padding: 0.75rem 1.5rem; /* Standard padding */
   background-color: var(--bg-primary); /* Match interface bg */
@@ -244,6 +250,12 @@ body {
   position: relative; /* For potential absolute elements */
   z-index: 10; /* Keep above chat area */
   transition: background-color 0.3s ease, border-color 0.3s ease; /* Theme transitions */
+  gap: 1rem; /* Add gap between title and controls */
+}
+
+.header-title {
+  flex-grow: 1; /* Allow title to take available space */
+  min-width: 0; /* Prevent title from pushing controls off */
 }
 
 .chat-header h1 {
@@ -252,30 +264,75 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin: 0; /* Reset default h1 margin */
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Space between model selector and action buttons */
+  flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+.model-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem; /* Space between select and error indicator */
+}
+
+.model-select {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-select);
+  background-color: var(--bg-button-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 150px; /* Give it some base width */
+  max-width: 250px; /* Prevent it from getting too wide */
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.model-select:hover {
+  border-color: var(--border-focus);
+}
+
+.model-select:disabled {
+  background-color: var(--bg-select-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  border-color: var(--border-primary);
+}
+
+.model-error-indicator {
+  color: #e53e3e; /* Red color for error */
+  font-size: 1rem;
+  cursor: help; /* Indicate hoverable for tooltip */
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Space between action buttons */
 }
 
 .header-actions button {
-  margin-left: 0.75rem;
+  /* Shared button styles */
   background-color: transparent;
   border: 1px solid var(--border-primary);
   color: var(--text-secondary); /* Use secondary text for less emphasis */
-  padding: 0.4rem 0.8rem;
+  padding: 0; /* Reset padding */
+  width: 32px; /* Fixed size for icon buttons */
+  height: 32px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1rem; /* Adjust icon size if needed */
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
-
-/* Optional: Style the theme toggle button specifically if needed */
-/* Uncomment and modify these styles when needed:
-.theme-toggle-btn {
-  min-width: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-*/
 
 .header-actions button:hover:not(:disabled) {
   background-color: var(--bg-button-secondary);
@@ -285,6 +342,9 @@ body {
 .header-actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background-color: transparent; /* Ensure disabled bg is consistent */
+  color: var(--text-disabled);
+  border-color: var(--border-primary);
 }
 
 
@@ -547,6 +607,7 @@ body {
 
 .chat-form button[type="submit"]:disabled {
     background-color: var(--bg-button-secondary);
+    color: var(--text-disabled); /* Use disabled text color */
     cursor: not-allowed;
 }
 
@@ -566,8 +627,11 @@ body {
 /* --- Scroll to Bottom Button --- */
 .scroll-to-bottom-container {
   position: absolute;
-  bottom: calc(4rem + 40px); /* Position above the input area dynamically */
-  left: 50%;
+  /* Adjust bottom position based on input area height - might need JS or be approximate */
+  bottom: 80px; /* Example fixed position - adjust as needed */
+  /* Or use calc if input area height is predictable */
+  /* bottom: calc(var(--chat-input-area-height, 70px) + 1rem); */
+  left: 50%; /* Center relative to chat-interface */
   transform: translateX(-50%);
   z-index: 20; /* Above chat content */
 }
@@ -609,3 +673,4 @@ body {
   white-space: nowrap;
   border: 0;
 }
+
