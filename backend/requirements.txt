@@ -1,4 +1,18 @@
 fastapi
-uvicorn
+uvicorn[standard]
 requests
-httpx
+python-dotenv
+aiohttp # Added by user in original file, keep it
+ollama # Added by user in original file, keep it
+python-multipart
+
+# RAG Additions
+langchain
+langchain-community
+langchain-huggingface # For embeddings
+langchain-ollama # For ChatOllama
+langchain-chroma # For Chroma vectorstore integration
+chromadb-client==0.5.11 # Pin client version to last stable 0.4.x release
+sentence-transformers
+pypdf # For loading PDF files, add others like python-docx, unstructured if needed
+tiktoken # Often needed by langchain text splitters

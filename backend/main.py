@@ -1,249 +1,349 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse # Import StreamingResponse
-from pydantic import BaseModel
 import os
-import json
-import httpx # Using httpx for async benefits and streaming
-from typing import List, Dict, Any, AsyncGenerator, Optional # Import Optional
+import logging
+import aiohttp
+import asyncio # Added for health check timeout
+import ollama
+from fastapi import FastAPI, HTTPException, UploadFile, File, Body
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional, AsyncGenerator
+import chromadb # Vector Store
+from chromadb.config import Settings
+from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import PyPDFLoader # Example loader
+# from langchain_community.document_loaders import UnstructuredFileLoader # More general loader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+# Use updated imports for LangChain 0.2+
+from langchain_huggingface import HuggingFaceEmbeddings # Updated import
+from langchain_ollama import ChatOllama # Updated import
+from langchain_chroma import Chroma as LangchainChroma # Updated import
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough, RunnableParallel
+from langchain_core.messages import AIMessage, HumanMessage
+from fastapi.responses import StreamingResponse # Import StreamingResponse
 
-app = FastAPI(title="Accessibility Navigator API")
-# Ensure OLLAMA_URL is correctly set in your environment or default
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434") # Default to localhost if not set
 
-# Add CORS middleware
+# --- Configuration ---
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+CHROMA_PORT = os.getenv("CHROMA_PORT", "8000")
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# --- FastAPI App Setup ---
+app = FastAPI()
+# Hello
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Be more specific in production!
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- Pydantic Models ---
+# --- RAG Components Setup ---
+chroma_client = None
+embedding_function = None
+vectorstore = None
+llm = None
+retriever = None
+
+# Initialize components in a try block for better error handling during startup
+try:
+    logger.info(f"Attempting to connect to ChromaDB at {CHROMA_HOST}:{CHROMA_PORT}")
+    chroma_client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT, settings=Settings(allow_reset=True))
+    logger.info("Successfully connected to ChromaDB.")
+
+    logger.info(f"Initializing HuggingFace embeddings with model: {EMBEDDING_MODEL_NAME}")
+    # Use the updated HuggingFaceEmbeddings
+    embedding_function = HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL_NAME,
+        model_kwargs={'device': 'cpu'}, # Specify CPU device if needed
+        encode_kwargs={'normalize_embeddings': False}
+    )
+    logger.info("HuggingFace embeddings initialized.")
+
+    COLLECTION_NAME = "rag_documents"
+    # Use the updated LangchainChroma import
+    vectorstore = LangchainChroma(
+        client=chroma_client,
+        collection_name=COLLECTION_NAME,
+        embedding_function=embedding_function,
+    )
+    logger.info(f"LangChain Chroma vector store initialized for collection: {COLLECTION_NAME}")
+
+    logger.info(f"Initializing ChatOllama with model: {OLLAMA_MODEL} at {OLLAMA_BASE_URL}")
+    # Use the updated ChatOllama import
+    llm = ChatOllama(model=OLLAMA_MODEL, base_url=OLLAMA_BASE_URL)
+    logger.info("ChatOllama initialized.")
+
+    # --- Retriever Initialization with Debugging ---
+    logger.info(f"Checking vectorstore object before retriever initialization: {vectorstore}") # <-- ADDED DEBUG LOG
+    if vectorstore:
+        logger.info("Vectorstore object confirmed, attempting to create retriever...") # <-- ADDED DEBUG LOG
+        retriever = vectorstore.as_retriever(
+            search_type="similarity",
+            search_kwargs={'k': 5}
+        )
+        logger.info("Retriever initialized successfully.") # <-- ADDED DEBUG LOG
+    else:
+        logger.warning("Vectorstore object is None or evaluates to False. Cannot initialize retriever.") # <-- Modified Log
+
+except Exception as e:
+    logger.critical(f"Failed to initialize RAG components during startup: {e}", exc_info=True)
+    # Depending on severity, you might want to prevent the app from fully starting
+    # For now, components might remain None, and endpoints should handle this
+
+
+# --- RAG Chain Setup ---
+RAG_PROMPT_TEMPLATE = """
+CONTEXT:
+{context}
+
+CONVERSATION HISTORY:
+{chat_history}
+
+QUESTION:
+{question}
+
+Answer the question based *only* on the provided context and conversation history. If the context doesn't contain the answer, say you don't know.
+"""
+rag_prompt = ChatPromptTemplate.from_messages([
+    ("system", RAG_PROMPT_TEMPLATE),
+    MessagesPlaceholder(variable_name="chat_history_messages"),
+    ("human", "{question}"),
+])
+
+SIMPLE_PROMPT_TEMPLATE = """
+CONVERSATION HISTORY:
+{chat_history}
+
+QUESTION:
+{question}
+
+Answer the question based on the conversation history and your general knowledge.
+"""
+simple_prompt = ChatPromptTemplate.from_messages([
+    ("system", SIMPLE_PROMPT_TEMPLATE),
+    MessagesPlaceholder(variable_name="chat_history_messages"),
+    ("human", "{question}"),
+])
+
+def format_chat_history(chat_history: List[Dict[str, str]]) -> str:
+    if not chat_history:
+        return "No history yet."
+    return "\n".join([f"{msg['role'].upper()}: {msg['content']}" for msg in chat_history])
+
+def format_history_for_lc(chat_history: List[Dict[str, str]]) -> list:
+    messages = []
+    for msg in chat_history:
+        if msg.get("role") == "user":
+            messages.append(HumanMessage(content=msg.get("content", "")))
+        elif msg.get("role") == "assistant":
+            messages.append(AIMessage(content=msg.get("content", "")))
+    return messages
+
+def create_rag_chain(use_rag=True):
+    if not llm:
+         raise HTTPException(status_code=503, detail="LLM (Ollama) is not available. Initialization failed.")
+
+    # Check retriever status *inside* the factory function
+    current_retriever = retriever # Use the globally initialized retriever
+    if current_retriever and use_rag:
+        logger.info("Creating RAG chain with retriever.")
+        rag_chain = (
+            RunnableParallel(
+                context=(lambda x: x['question']) | current_retriever,
+                question=RunnablePassthrough(),
+                chat_history=(lambda x: format_chat_history(x['chat_history'])),
+                chat_history_messages=(lambda x: format_history_for_lc(x['chat_history']))
+            )
+            | rag_prompt
+            | llm
+            | StrOutputParser()
+        )
+        return rag_chain
+    else:
+        if use_rag and not current_retriever:
+             logger.warning("RAG requested but retriever is unavailable. Falling back to simple chain.")
+        logger.info("Creating Simple chain (RAG disabled or retriever unavailable).")
+        simple_chain = (
+             RunnableParallel(
+                question=(lambda x: x['question']),
+                chat_history=(lambda x: format_chat_history(x['chat_history'])),
+                chat_history_messages=(lambda x: format_history_for_lc(x['chat_history']))
+             )
+            | simple_prompt
+            | llm
+            | StrOutputParser()
+        )
+        return simple_chain
+
+# --- API Models ---
 class ChatRequest(BaseModel):
-    """Request model for the chat endpoint."""
-    query: str
-    model: str
+    session_id: str
+    prompt: str
+    history: List[Dict[str, str]] = []
+    use_rag: bool = True
 
-class OllamaModel(BaseModel):
-    """Model representing a single Ollama model tag."""
-    name: str
-    modified_at: str
-    size: int
+class ChatResponse(BaseModel):
+    session_id: str
+    response: str
 
-class OllamaTagsResponse(BaseModel):
-    """Response model for Ollama's /api/tags endpoint."""
-    models: List[OllamaModel]
-
-# New models for automation endpoint
-class AutomateRequest(BaseModel):
-    """Request model for the automation endpoint."""
-    inputs: List[str]
-    model: str
-
-class ConversationTurn(BaseModel):
-    """Represents one turn (user input + bot response) in the conversation."""
-    sender: str # 'user' or 'bot'
-    text: str
-
-# --- Helper Functions ---
-
-async def get_ollama_models() -> List[OllamaModel]:
-    """Fetches the list of available models from Ollama."""
-    api_url = f"{OLLAMA_URL}/api/tags"
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(api_url)
-            response.raise_for_status()
-            data = response.json()
-            tags_response = OllamaTagsResponse(**data)
-            return tags_response.models
-    except httpx.RequestError as e:
-        print(f"Error fetching Ollama models: {e}")
-        raise HTTPException(status_code=503, detail=f"Could not connect to Ollama at {api_url}: {e}")
-    except httpx.HTTPStatusError as e:
-        print(f"Error response from Ollama API ({e.response.status_code}): {e.response.text}")
-        raise HTTPException(status_code=e.response.status_code, detail=f"Error from Ollama API: {e.response.text}")
-    except Exception as e:
-        print(f"An unexpected error occurred while fetching models: {e}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred while fetching models.")
-
-
-async def ollama_stream_generator(query: str, model: str) -> AsyncGenerator[str, None]:
-    """
-    Async generator that yields chunks from Ollama's streaming API.
-    (Used by the interactive chat endpoint)
-    """
-    api_url = f"{OLLAMA_URL}/api/chat"
-    payload = {
-        "model": model,
-        "messages": [{"role": "user", "content": query}],
-        "stream": True
-    }
-    try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            async with client.stream("POST", api_url, json=payload) as response:
-                if response.status_code != 200:
-                    error_content = await response.aread()
-                    error_text = error_content.decode()
-                    print(f"Error from Ollama API: Status {response.status_code}, Body: {error_text}")
-                    detail = f"Status {response.status_code}"
-                    try:
-                        error_json = json.loads(error_text)
-                        detail = error_json.get("error", detail)
-                    except json.JSONDecodeError:
-                        detail = f"{detail}: {error_text[:100]}"
-                    response.raise_for_status() # Raise HTTPStatusError
-
-                async for line in response.aiter_lines():
-                    if line:
-                        try:
-                            data_line = json.loads(line)
-                            if "message" in data_line and "content" in data_line["message"]:
-                                yield data_line["message"]["content"]
-                            if "error" in data_line:
-                                print(f"Error in Ollama stream: {data_line['error']}")
-                                break
-                        except json.JSONDecodeError:
-                            print(f"Warning: Could not decode JSON line: {line}")
-                        except Exception as e:
-                            print(f"Error processing stream line: {line}, Error: {e}")
-
-    except httpx.HTTPStatusError as e:
-        print(f"HTTP Error connecting to Ollama: {e}")
-        pass
-    except httpx.RequestError as e:
-        print(f"Request Error connecting to Ollama: {e}")
-        pass
-    except Exception as e:
-        print(f"An unexpected error occurred during streaming generation: {e}")
-        pass
-
-async def get_ollama_response(messages: List[Dict[str, str]], model: str) -> Optional[str]:
-    """
-    Gets a single, non-streaming response from Ollama given a conversation history.
-    (Used by the automation endpoint)
-    """
-    api_url = f"{OLLAMA_URL}/api/chat"
-    payload = {
-        "model": model,
-        "messages": messages, # Pass the whole history
-        "stream": False # Request non-streaming response
-    }
-    try:
-        async with httpx.AsyncClient(timeout=180.0) as client: # Longer timeout for potentially longer generation
-            response = await client.post(api_url, json=payload)
-            response.raise_for_status() # Raise exception for bad status codes
-            data = response.json()
-            if data and "message" in data and "content" in data["message"]:
-                return data["message"]["content"]
-            else:
-                print(f"Warning: Unexpected response structure from Ollama: {data}")
-                return None # Or raise an error
-    except httpx.RequestError as e:
-        print(f"Request Error connecting to Ollama for automation: {e}")
-        raise HTTPException(status_code=503, detail=f"Could not connect to Ollama: {e}")
-    except httpx.HTTPStatusError as e:
-        print(f"HTTP Error from Ollama API ({e.response.status_code}): {e.response.text}")
-        detail = f"Ollama API Error: Status {e.response.status_code}"
-        try:
-            error_json = e.response.json()
-            detail = error_json.get("error", detail)
-        except json.JSONDecodeError:
-             detail = f"{detail}: {e.response.text[:150]}" # Include snippet of non-JSON error
-        raise HTTPException(status_code=e.response.status_code, detail=detail)
-    except Exception as e:
-        print(f"An unexpected error occurred getting Ollama response: {e}")
-        raise HTTPException(status_code=500, detail="An unexpected error occurred during Ollama communication.")
-
+class StreamRequest(BaseModel):
+    session_id: str
+    prompt: str
+    history: List[Dict[str, str]] = []
+    use_rag: bool = True
 
 # --- API Endpoints ---
 
 @app.get("/")
-def read_root():
-    """Root endpoint."""
-    return {"message": "Welcome to the Accessibility Navigator API"}
+async def read_root():
+    return {"message": "Backend is running"}
 
-@app.get("/api/models", response_model=List[OllamaModel])
-async def list_models():
-    """Endpoint to get the list of available Ollama models."""
-    models = await get_ollama_models()
-    return models
+@app.post("/upload")
+async def upload_document(file: UploadFile = File(...)):
+    # Check component availability at the start of the endpoint
+    if not vectorstore:
+        raise HTTPException(status_code=503, detail="Vector store is not available (initialization failed?).")
+    if not embedding_function:
+         raise HTTPException(status_code=503, detail="Embedding function is not available (initialization failed?).")
 
-@app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
-    """
-    Interactive chat endpoint that streams the response from Ollama token by token.
-    """
+    logger.info(f"Received file upload: {file.filename}, content type: {file.content_type}")
+    temp_file_path = f"/tmp/{file.filename}"
     try:
-        return StreamingResponse(
-            ollama_stream_generator(request.query, request.model),
-            media_type="text/plain"
-        )
-    except HTTPException as e:
-        raise e
+        with open(temp_file_path, "wb") as buffer:
+            buffer.write(await file.read())
+        logger.info(f"File saved temporarily to {temp_file_path}")
+
+        if file.content_type == "application/pdf":
+            loader = PyPDFLoader(temp_file_path)
+        else:
+             raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}. Currently only PDF is supported.")
+
+        documents = loader.load()
+        logger.info(f"Loaded {len(documents)} document pages/sections from {file.filename}")
+
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = text_splitter.split_documents(documents)
+        logger.info(f"Split document into {len(chunks)} chunks")
+
+        if not chunks:
+            logger.warning("No text chunks generated from the document.")
+            return {"message": "No text content found or extracted from the document.", "filename": file.filename}
+
+        logger.info(f"Adding {len(chunks)} chunks to Chroma collection '{COLLECTION_NAME}'...")
+        # Use add_documents method
+        vectorstore.add_documents(chunks)
+        logger.info(f"Successfully added chunks from {file.filename} to vector store.")
+
+        return {"message": "Document processed and added to knowledge base.", "filename": file.filename, "chunks_added": len(chunks)}
+
     except Exception as e:
-        print(f"Error setting up chat stream: {e}")
-        raise HTTPException(status_code=500, detail="Failed to start chat stream.")
+        logger.error(f"Error processing file {file.filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
+    finally:
+        if os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+                logger.info(f"Removed temporary file: {temp_file_path}")
+            except OSError as e:
+                 logger.error(f"Error removing temporary file {temp_file_path}: {e}")
 
-@app.post("/api/automate_conversation", response_model=List[ConversationTurn])
-async def automate_conversation_endpoint(request: AutomateRequest):
-    """
-    Endpoint to run an automated conversation based on a list of user inputs.
-    It processes inputs sequentially, maintaining context, and returns the full history.
-    """
-    conversation_history: List[Dict[str, str]] = [] # Stores Ollama-compatible history [{role: 'user'/'assistant', content: '...'}]
-    full_result: List[ConversationTurn] = [] # Stores the final result for the frontend
 
-    if not request.inputs:
-        raise HTTPException(status_code=400, detail="Input list cannot be empty.")
+@app.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest):
+    logger.info(f"Received chat request for session {request.session_id}, use_rag={request.use_rag}")
+    try:
+        chain = create_rag_chain(use_rag=request.use_rag) # Can raise 503 if LLM is down
+        chain_input = {"question": request.prompt, "chat_history": request.history}
+        response_content = await chain.ainvoke(chain_input)
+        logger.info(f"Generated response for session {request.session_id}")
+        return ChatResponse(session_id=request.session_id, response=response_content)
+    except HTTPException as e:
+        raise e # Re-raise HTTP exceptions (e.g., 503 from create_rag_chain)
+    except Exception as e:
+        logger.error(f"Error during chat generation for session {request.session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
 
-    print(f"Starting automated conversation with model {request.model} for {len(request.inputs)} inputs.")
 
-    for user_input in request.inputs:
-        # Add user input to Ollama history and final result
-        user_message_ollama = {"role": "user", "content": user_input}
-        user_message_frontend = ConversationTurn(sender="user", text=user_input)
+@app.post("/stream")
+async def stream_endpoint(request: StreamRequest):
+    logger.info(f"Received stream request for session {request.session_id}, use_rag={request.use_rag}")
 
-        conversation_history.append(user_message_ollama)
-        full_result.append(user_message_frontend)
-
-        print(f"  Processing user input: '{user_input[:50]}...'")
-
-        # Get bot response from Ollama using the current history
+    async def event_stream() -> AsyncGenerator[str, None]:
         try:
-            bot_response_text = await get_ollama_response(conversation_history, request.model)
-
-            if bot_response_text is None:
-                # Handle case where Ollama didn't return content as expected
-                bot_response_text = "[Error: No response content received from Ollama]"
-                # Decide if we should stop or continue
-                # For now, add the error and continue
-                print(f"  Warning: No content received from Ollama for input '{user_input[:50]}...'")
-
-            # Add bot response to Ollama history and final result
-            bot_message_ollama = {"role": "assistant", "content": bot_response_text}
-            bot_message_frontend = ConversationTurn(sender="bot", text=bot_response_text)
-
-            conversation_history.append(bot_message_ollama)
-            full_result.append(bot_message_frontend)
-            print(f"  Received bot response: '{bot_response_text[:50]}...'")
-
+            chain = create_rag_chain(use_rag=request.use_rag) # Can raise 503
+            chain_input = {"question": request.prompt, "chat_history": request.history}
+            logger.info("Streaming response...")
+            async for chunk in chain.astream(chain_input):
+                yield chunk
+            logger.info(f"Stream finished for session {request.session_id}")
         except HTTPException as e:
-            # If get_ollama_response raises an HTTPException, append an error message and stop
-            print(f"  Error during Ollama call: {e.detail}")
-            error_message_frontend = ConversationTurn(sender="bot", text=f"[Automation Error: {e.detail}]")
-            full_result.append(error_message_frontend)
-            # Optionally re-raise or just return the partial result with the error
-            # raise e # Re-raise to send error status code back
-            break # Stop processing further inputs on error
+             logger.error(f"HTTP Exception during stream setup or generation: {e.detail}")
+             yield f"Error: {e.detail}"
         except Exception as e:
-            # Catch unexpected errors during the loop
-            print(f"  Unexpected error during automation loop: {e}")
-            error_message_frontend = ConversationTurn(sender="bot", text=f"[Unexpected Automation Error: {e}]")
-            full_result.append(error_message_frontend)
-            break # Stop processing
+            logger.error(f"Error during stream generation for session {request.session_id}: {e}", exc_info=True)
+            yield f"Error: Failed to generate streaming response. {str(e)}"
 
-    print(f"Finished automated conversation. Returning {len(full_result)} turns.")
-    return full_result
+    return StreamingResponse(event_stream(), media_type="text/plain")
+
+
+# --- Health Check ---
+@app.get("/health")
+async def health_check():
+    # Check Ollama connection
+    ollama_ok = False
+    ollama_error = "Unknown connection error"
+    if llm:
+        try:
+            # Simple check: list local models via the Ollama client library
+            # This requires the ollama library to be installed, which it should be
+            await ollama.AsyncClient(host=OLLAMA_BASE_URL).list()
+            ollama_ok = True
+            ollama_error = None
+        except Exception as e:
+            ollama_error = f"Error connecting to Ollama at {OLLAMA_BASE_URL}: {e}"
+            logger.warning(f"Health check failed for Ollama: {ollama_error}")
+    else:
+         ollama_error = "ChatOllama component failed to initialize."
+
+    # Check ChromaDB connection
+    chroma_ok = False
+    chroma_error = "Chroma client not initialized."
+    if chroma_client:
+        try:
+            chroma_client.heartbeat()
+            chroma_ok = True
+            chroma_error = None
+        except Exception as e:
+            chroma_error = f"Error connecting to ChromaDB: {e}"
+            logger.warning(f"Health check failed for ChromaDB: {chroma_error}")
+            chroma_ok = False
+
+    status_code = 200 if ollama_ok and chroma_ok else 503
+    response_detail = {
+        "status": "ok" if ollama_ok and chroma_ok else "error",
+        "ollama": {"status": "connected" if ollama_ok else "disconnected", "details": ollama_error},
+        "chromadb": {"status": "connected" if chroma_ok else "disconnected", "details": chroma_error}
+    }
+
+    if status_code == 503:
+         raise HTTPException(status_code=status_code, detail=response_detail)
+    else:
+         return response_detail
+
+
+if __name__ == "__main__":
+    import uvicorn
+    logger.info("Starting Uvicorn server locally...")
+    run_host = os.getenv("HOST", "0.0.0.0")
+    run_port = int(os.getenv("PORT", "8000"))
+    # Note: When running locally, ensure OLLAMA_BASE_URL and CHROMA_HOST/PORT point correctly
+    # e.g., OLLAMA_BASE_URL=http://localhost:11434, CHROMA_HOST=localhost, CHROMA_PORT=8001
+    uvicorn.run("main:app", host=run_host, port=run_port, reload=True) # Use reload for local dev
