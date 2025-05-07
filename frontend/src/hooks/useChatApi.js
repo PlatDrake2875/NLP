@@ -1,6 +1,9 @@
 // HIA/frontend/src/hooks/useChatApi.js
 import { useState, useCallback } from 'react';
 
+// Assuming API_BASE_URL is defined elsewhere or passed in correctly
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const CHAT_API_URL_SUFFIX = '/api/chat';
 const AUTOMATE_API_URL_SUFFIX = '/api/automate_conversation';
 
@@ -14,7 +17,7 @@ const AUTOMATE_API_URL_SUFFIX = '/api/automate_conversation';
  * automationError: string | null,
  * handleChatSubmit: (query: string, model: string) => Promise<void>,
  * handleAutomateConversation: (jsonInputString: string, model: string) => Promise<void>,
- * setAutomationError: React.Dispatch<React.SetStateAction<string | null>> // Expose setter
+ * setAutomationError: React.Dispatch<React.SetStateAction<string | null>>
  * }}
  */
 export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
@@ -30,32 +33,38 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
       console.warn("API Hook: Chat submission prevented.", { activeSessionId, model, isSubmitting });
       return;
     }
-    console.log(`API Hook: [${activeSessionId}] SUBMIT starting.`);
+    const reqId = `req_${Date.now()}`; // Simple request ID
+    console.log(`API Hook: [${activeSessionId} - ${reqId}] SUBMIT starting.`);
     setIsSubmitting(true);
-    setAutomationError(null); // Clear any previous automation errors
+    setAutomationError(null); 
 
     const userMessage = { sender: 'user', text: query, id: `user-${Date.now()}` };
     const botMessageId = `bot-${Date.now()}-${Math.random()}`;
-    const botMessagePlaceholder = { id: botMessageId, sender: 'bot', text: '...' };
+    // Add placeholder with isLoading flag
+    const botMessagePlaceholder = { id: botMessageId, sender: 'bot', text: '...', isLoading: true }; 
 
     // Update state optimistically
     setSessions(prevSessions => {
-      if (!prevSessions[activeSessionId]) return prevSessions; // Session might have been deleted
+      if (!prevSessions[activeSessionId]) return prevSessions; 
       const currentHistory = prevSessions[activeSessionId].history || [];
       const newHistory = [...currentHistory, userMessage, botMessagePlaceholder];
       return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
     });
 
+    let accumulatedBotResponse = ''; // Accumulate parsed tokens here
     let streamError = null;
+
     try {
       const response = await fetch(chatApiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream' // Explicitly accept SSE
+        },
         body: JSON.stringify({ query, model }),
       });
 
       if (!response.ok || !response.body) {
-        // Simplified error extraction for brevity
         let errorDetail = `HTTP error! status: ${response.status}`;
         try { const errorData = await response.text(); errorDetail = `${errorDetail}: ${errorData.substring(0,150)}`;} catch(e){}
         throw new Error(errorDetail);
@@ -63,52 +72,94 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let done = false;
-      let firstChunk = true;
+      let buffer = ''; // Buffer for incomplete SSE messages
 
-      while (!done) {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
         const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          setSessions(prevSessions => {
-            if (!prevSessions[activeSessionId]) return prevSessions;
-            const history = prevSessions[activeSessionId].history || [];
-            const botIndex = history.findIndex(msg => msg.id === botMessageId);
-            if (botIndex === -1) return prevSessions;
-            const currentText = firstChunk ? '' : (history[botIndex].text || '');
-            const updatedMsg = { ...history[botIndex], text: currentText + chunk };
-            const newHistory = [...history.slice(0, botIndex), updatedMsg, ...history.slice(botIndex + 1)];
-            return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
-          });
-          firstChunk = false;
+        if (readerDone) {
+            console.log(`API Hook: [${activeSessionId} - ${reqId}] Stream finished.`);
+            // Process any remaining buffer content if necessary
+            if (buffer.trim()) {
+                 console.warn(`API Hook: [${activeSessionId} - ${reqId}] Stream ended with unprocessed buffer content: ${buffer}`);
+            }
+            break; // Exit the loop
         }
-      }
+
+        // Add the new chunk to the buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process buffer line by line for SSE messages (separated by \n\n)
+        let eolIndex;
+        while ((eolIndex = buffer.indexOf('\n\n')) >= 0) {
+            const message = buffer.substring(0, eolIndex).trim();
+            buffer = buffer.substring(eolIndex + 2); // Remove message and \n\n from buffer
+
+            if (message.startsWith('data:')) {
+                const jsonString = message.substring(5).trim(); // Remove 'data:' prefix
+                if (jsonString) {
+                    try {
+                        const parsedData = JSON.parse(jsonString);
+                        
+                        if (parsedData.token) {
+                            accumulatedBotResponse += parsedData.token;
+                            // Update the specific bot message with accumulated text
+                            setSessions(prevSessions => {
+                                if (!prevSessions[activeSessionId]) return prevSessions;
+                                const history = prevSessions[activeSessionId].history || [];
+                                const botIndex = history.findIndex(msg => msg.id === botMessageId);
+                                if (botIndex === -1) return prevSessions; // Message might have been deleted
+                                // Update existing message, keep isLoading true until done
+                                const updatedMsg = { ...history[botIndex], text: accumulatedBotResponse, isLoading: true }; 
+                                const newHistory = [...history.slice(0, botIndex), updatedMsg, ...history.slice(botIndex + 1)];
+                                return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
+                            });
+                        } else if (parsedData.status === 'done') {
+                            console.log(`API Hook: [${activeSessionId} - ${reqId}] Received 'done' status via SSE.`);
+                            // The loop will break on readerDone, final update happens below
+                        } else if (parsedData.error) {
+                            console.error(`API Hook: [${activeSessionId} - ${reqId}] Error received via SSE:`, parsedData.error);
+                            throw new Error(`Stream error: ${parsedData.error}`); // Throw to handle below
+                        }
+                    } catch (e) {
+                        console.error(`API Hook: [${activeSessionId} - ${reqId}] Error parsing JSON from SSE line:`, jsonString, e);
+                        // Decide how to handle parsing errors - maybe ignore the line?
+                    }
+                }
+            } else if (message) {
+                 // Log lines that don't start with 'data:' (e.g., comments ': ping')
+                 console.log(`API Hook: [${activeSessionId} - ${reqId}] Received non-data SSE line: ${message}`);
+            }
+        } // End while(eolIndex)
+      } // End while(true)
+
     } catch (error) {
-      console.error(`API Hook: [${activeSessionId}] Chat stream error:`, error);
+      console.error(`API Hook: [${activeSessionId} - ${reqId}] Chat stream error:`, error);
       streamError = error;
-      // Update placeholder with error message
+    } finally {
+      // Final update to the bot message, setting isLoading to false
       setSessions(prevSessions => {
         if (!prevSessions[activeSessionId]) return prevSessions;
         const history = prevSessions[activeSessionId].history || [];
         const botIndex = history.findIndex(msg => msg.id === botMessageId);
-        const errorText = `⚠️ Error: ${streamError?.message || 'Unknown stream error'}`;
-        let newHistory;
-        if (botIndex === -1) {
-          newHistory = [...history, { id: botMessageId, sender: 'bot', text: errorText }];
-        } else {
-          const updatedMsg = { ...history[botIndex], text: errorText };
-          newHistory = [...history.slice(0, botIndex), updatedMsg, ...history.slice(botIndex + 1)];
-        }
+        if (botIndex === -1) return prevSessions; // Message no longer exists
+
+        const finalMsg = { 
+            ...history[botIndex], 
+            text: streamError ? `⚠️ Error: ${streamError?.message || 'Unknown stream error'}` : (accumulatedBotResponse || "..." ), // Use accumulated text or error
+            isLoading: false // Mark as not loading
+        };
+        const newHistory = [...history.slice(0, botIndex), finalMsg, ...history.slice(botIndex + 1)];
         return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
       });
-    } finally {
+
       setIsSubmitting(false);
-      console.log(`API Hook: [${activeSessionId}] SUBMIT finished.`);
+      console.log(`API Hook: [${activeSessionId} - ${reqId}] SUBMIT finished.`);
     }
   }, [activeSessionId, isSubmitting, setSessions, chatApiUrl]); // Dependencies
 
   // --- Automated Conversation Submission ---
+  // (Keep handleAutomateConversation as it was, assuming it doesn't use streaming or is correct)
   const handleAutomateConversation = useCallback(async (jsonInputString, model) => {
     if (!activeSessionId || !model || isSubmitting) {
       setAutomationError("Automation cannot start: Another process is running, or no session/model selected.");
@@ -129,7 +180,6 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
     setIsSubmitting(true);
     setAutomationError(null);
 
-    // Clear history optimistically before API call
     setSessions(prevSessions => {
         if (!prevSessions[activeSessionId]) return prevSessions;
         return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: [] } };
@@ -143,7 +193,6 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
       });
 
       if (!response.ok) {
-        // Simplified error extraction
         let errorDetail = `HTTP error! status: ${response.status}`;
         try { const errorData = await response.text(); errorDetail = `${errorDetail}: ${errorData.substring(0,200)}`;} catch(e){}
         throw new Error(errorDetail);
@@ -154,9 +203,8 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 
       const historyWithIds = conversationResult.map((turn, index) => ({ ...turn, id: `${turn.sender}-${Date.now()}-${index}` }));
 
-      // Update state with the full history from backend
       setSessions(prevSessions => {
-        if (!prevSessions[activeSessionId]) return prevSessions; // Check if session still exists
+        if (!prevSessions[activeSessionId]) return prevSessions; 
         return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: historyWithIds } };
       });
       console.log(`API Hook: [${activeSessionId}] AUTOMATE success.`);
@@ -164,10 +212,9 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
     } catch (error) {
       console.error(`API Hook: [${activeSessionId}] AUTOMATE error:`, error);
       setAutomationError(`Automation failed: ${error.message}`);
-      // Add error message to history
       setSessions(prevSessions => {
         if (!prevSessions[activeSessionId]) return prevSessions;
-        const currentHistory = prevSessions[activeSessionId].history || []; // Should be empty from optimistic update
+        const currentHistory = prevSessions[activeSessionId].history || []; 
         const errorMsg = { id: `error-${Date.now()}`, sender: 'bot', text: `⚠️ Automation Error: ${error.message}` };
         return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: [...currentHistory, errorMsg] } };
       });
@@ -175,13 +222,13 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
       setIsSubmitting(false);
       console.log(`API Hook: [${activeSessionId}] AUTOMATE finished.`);
     }
-  }, [activeSessionId, isSubmitting, setSessions, automateApiUrl]); // Dependencies
+  }, [activeSessionId, isSubmitting, setSessions, automateApiUrl]); 
 
   return {
     isSubmitting,
     automationError,
     handleChatSubmit,
     handleAutomateConversation,
-    setAutomationError, // Expose setter if needed externally
+    setAutomationError, 
   };
 }
