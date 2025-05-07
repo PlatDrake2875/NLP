@@ -79,10 +79,6 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
         const { value, done: readerDone } = await reader.read();
         if (readerDone) {
             console.log(`API Hook: [${activeSessionId} - ${reqId}] Stream finished.`);
-            // Process any remaining buffer content if necessary
-            if (buffer.trim()) {
-                 console.warn(`API Hook: [${activeSessionId} - ${reqId}] Stream ended with unprocessed buffer content: ${buffer}`);
-            }
             break; // Exit the loop
         }
 
@@ -102,32 +98,33 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
                         const parsedData = JSON.parse(jsonString);
                         
                         if (parsedData.token) {
-                            accumulatedBotResponse += parsedData.token;
+                            // *** CORRECTED PART ***
+                            // Accumulate only the token value
+                            accumulatedBotResponse += parsedData.token; 
+                            
                             // Update the specific bot message with accumulated text
                             setSessions(prevSessions => {
                                 if (!prevSessions[activeSessionId]) return prevSessions;
                                 const history = prevSessions[activeSessionId].history || [];
                                 const botIndex = history.findIndex(msg => msg.id === botMessageId);
-                                if (botIndex === -1) return prevSessions; // Message might have been deleted
-                                // Update existing message, keep isLoading true until done
+                                if (botIndex === -1) return prevSessions; 
+                                // Update existing message with accumulated text, keep isLoading true
                                 const updatedMsg = { ...history[botIndex], text: accumulatedBotResponse, isLoading: true }; 
                                 const newHistory = [...history.slice(0, botIndex), updatedMsg, ...history.slice(botIndex + 1)];
                                 return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
                             });
                         } else if (parsedData.status === 'done') {
                             console.log(`API Hook: [${activeSessionId} - ${reqId}] Received 'done' status via SSE.`);
-                            // The loop will break on readerDone, final update happens below
+                            // Final update happens in 'finally' block
                         } else if (parsedData.error) {
                             console.error(`API Hook: [${activeSessionId} - ${reqId}] Error received via SSE:`, parsedData.error);
-                            throw new Error(`Stream error: ${parsedData.error}`); // Throw to handle below
+                            throw new Error(`Stream error: ${parsedData.error}`); 
                         }
                     } catch (e) {
                         console.error(`API Hook: [${activeSessionId} - ${reqId}] Error parsing JSON from SSE line:`, jsonString, e);
-                        // Decide how to handle parsing errors - maybe ignore the line?
                     }
                 }
             } else if (message) {
-                 // Log lines that don't start with 'data:' (e.g., comments ': ping')
                  console.log(`API Hook: [${activeSessionId} - ${reqId}] Received non-data SSE line: ${message}`);
             }
         } // End while(eolIndex)
@@ -146,7 +143,8 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 
         const finalMsg = { 
             ...history[botIndex], 
-            text: streamError ? `⚠️ Error: ${streamError?.message || 'Unknown stream error'}` : (accumulatedBotResponse || "..." ), // Use accumulated text or error
+            // Use accumulated text if no error, otherwise show error
+            text: streamError ? `⚠️ Error: ${streamError?.message || 'Unknown stream error'}` : (accumulatedBotResponse || "..."), 
             isLoading: false // Mark as not loading
         };
         const newHistory = [...history.slice(0, botIndex), finalMsg, ...history.slice(botIndex + 1)];
@@ -159,7 +157,7 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
   }, [activeSessionId, isSubmitting, setSessions, chatApiUrl]); // Dependencies
 
   // --- Automated Conversation Submission ---
-  // (Keep handleAutomateConversation as it was, assuming it doesn't use streaming or is correct)
+  // (Keep handleAutomateConversation as it was)
   const handleAutomateConversation = useCallback(async (jsonInputString, model) => {
     if (!activeSessionId || !model || isSubmitting) {
       setAutomationError("Automation cannot start: Another process is running, or no session/model selected.");

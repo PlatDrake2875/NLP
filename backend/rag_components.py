@@ -27,7 +27,6 @@ except ImportError:
     logger.critical("Failed to import from config. Ensure config.py exists and PYTHONPATH is correct.")
     raise
 
-
 # --- Globals for RAG Components (initialized by setup_rag_components) ---
 chroma_client: Optional[chromadb.HttpClient] = None
 embedding_function: Optional[HuggingFaceEmbeddings] = None
@@ -35,9 +34,14 @@ vectorstore: Optional[LangchainChroma] = None
 retriever: Optional[Runnable] = None 
 ollama_chat_for_rag: Optional[ChatOllama] = None
 rag_prompt_template_obj: Optional[ChatPromptTemplate] = None
-simple_prompt_template_obj: Optional[ChatPromptTemplate] = None # Still needed if RAG is re-enabled
+simple_prompt_template_obj: Optional[ChatPromptTemplate] = None
 
+# --- Control Flag ---
+# Set this to True to use the RAG chain (_build_rag_chain_with_fallback)
+# Set this to False to always use the Simple chain (_build_simple_chain)
+RAG_ENABLED = True # Set to True to re-enable RAG functionality
 
+# --- Component Setup ---
 def setup_rag_components():
     """Initializes and sets up all RAG components."""
     global chroma_client, embedding_function, vectorstore, retriever, ollama_chat_for_rag
@@ -107,7 +111,7 @@ def setup_rag_components():
     logger.info("Prompt templates initialized.")
     logger.info("RAG components setup finished.")
 
-
+# --- Helper Functions ---
 def format_chat_history(chat_history: List[Dict[str, str]]) -> str:
     if not chat_history: 
         return "No previous conversation." 
@@ -134,73 +138,161 @@ def combine_retrieved_documents(docs: List[Document]) -> str:
     logger.debug(f"Combined context: {combined[:500]}...") 
     return combined
 
+def _select_llm(specific_ollama_model_name: Optional[str] = None) -> ChatOllama:
+    """Selects the appropriate ChatOllama instance."""
+    global ollama_chat_for_rag
+    
+    active_llm = ollama_chat_for_rag # Start with default
 
-def get_rag_or_simple_chain(use_rag_flag: bool, specific_ollama_model_name: Optional[str] = None) -> Runnable:
-    """
-    Constructs a chain. If RAG is deactivated below, it always returns a simple conversational chain.
-    Otherwise, it attempts RAG with fallback to simple chain if no docs are found.
-    """
-    global ollama_chat_for_rag, rag_prompt_template_obj, simple_prompt_template_obj, retriever
-
-    # --- LLM Selection ---
-    # ... (LLM selection logic remains the same) ...
-    active_llm = ollama_chat_for_rag
     if specific_ollama_model_name and specific_ollama_model_name != OLLAMA_MODEL_FOR_RAG and specific_ollama_model_name != "Unknown Model":
-        logger.info(f"Chain will use specific Ollama model: {specific_ollama_model_name}")
+        logger.info(f"LLM Selection: Using specific model '{specific_ollama_model_name}'")
         try:
             active_llm = ChatOllama(model=specific_ollama_model_name, base_url=OLLAMA_BASE_URL, temperature=0)
         except Exception as e_llm_init:
             logger.error(f"Failed to initialize specific LLM '{specific_ollama_model_name}': {e_llm_init}. Falling back to default.")
-            if not ollama_chat_for_rag:
+            if not ollama_chat_for_rag: # Check if default exists before falling back
                 logger.critical("Default RAG LLM is not available after specific LLM failed.")
                 raise HTTPException(status_code=503, detail="Core LLM components are not available.")
             active_llm = ollama_chat_for_rag 
     elif specific_ollama_model_name == "Unknown Model":
-        logger.warning(f"Received 'Unknown Model'. Chain will use default RAG model: {OLLAMA_MODEL_FOR_RAG}")
+        logger.warning(f"LLM Selection: Received 'Unknown Model'. Using default RAG model: {OLLAMA_MODEL_FOR_RAG}")
         if not ollama_chat_for_rag:
             logger.critical("Default RAG LLM is not available for 'Unknown Model' case.")
             raise HTTPException(status_code=503, detail="Default RAG LLM is not available.")
         active_llm = ollama_chat_for_rag
     elif not ollama_chat_for_rag: 
-        logger.error("Default RAG LLM (ollama_chat_for_rag) is not available.")
+        logger.error("LLM Selection: Default RAG LLM (ollama_chat_for_rag) is not available.")
         raise HTTPException(status_code=503, detail="Core LLM for RAG is not available.")
     else:
-        logger.info(f"Chain will use default RAG model: {OLLAMA_MODEL_FOR_RAG}")
+        logger.info(f"LLM Selection: Using default RAG model: {OLLAMA_MODEL_FOR_RAG}")
 
-    # --- Define the part of the chain that calls the LLM ---
-    llm_chain_part = active_llm | StrOutputParser()
+    return active_llm
+
+# --- Chain Construction Functions ---
+
+def _build_simple_chain(llm: ChatOllama) -> Runnable:
+    """Builds the simple conversational chain (no RAG)."""
+    global simple_prompt_template_obj
     
-    # --- Simple Chain Definition (No RAG) ---
     if not simple_prompt_template_obj:
-        logger.error("Simple prompt template is not initialized.")
+        logger.error("Simple prompt template is not initialized for _build_simple_chain.")
         raise HTTPException(status_code=503, detail="Simple prompt template is not available.")
 
-    # Use RunnablePassthrough.assign to explicitly create the input dict for the prompt
-    # The input to this whole chain segment should be {"question": ..., "chat_history": ...}
+    # Prepare input for the simple prompt template
     prepare_simple_input = RunnablePassthrough.assign(
-        # Ensure the 'question' key exists and pass it through
         question=lambda x: x.get('question', 'MISSING QUESTION IN SIMPLE PREP'), 
-        # Format the history and assign it to the key expected by MessagesPlaceholder
         chat_history_messages=lambda x: format_history_for_lc(x.get('chat_history', []))
     )
 
-    # Log the prepared input right before it hits the prompt template
     def log_simple_input(prepared_input: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"[log_simple_input] Input for Simple Prompt: {prepared_input}")
         return prepared_input
 
     simple_chain = (
         prepare_simple_input |
-        RunnableLambda(log_simple_input) | # Log the dictionary
+        RunnableLambda(log_simple_input) |
         simple_prompt_template_obj | 
-        llm_chain_part 
+        llm | # Use the passed LLM instance
+        StrOutputParser()
+    )
+    logger.info("Built simple_chain.")
+    return simple_chain
+
+def _build_rag_chain_with_fallback(llm: ChatOllama) -> Runnable:
+    """Builds the RAG chain with fallback to the simple chain if no documents are found."""
+    global retriever, rag_prompt_template_obj, simple_prompt_template_obj
+
+    if not retriever or not rag_prompt_template_obj or not simple_prompt_template_obj:
+        logger.error("Cannot build RAG chain: Required components (retriever, RAG prompt, or Simple prompt) are missing.")
+        raise HTTPException(status_code=503, detail="RAG components not fully initialized.")
+
+    # --- Define parts specific to RAG ---
+    retrieval_chain_part = (
+        RunnablePassthrough.assign( 
+            docs=RunnableLambda(lambda x: logger.info(f"Retriever Input: '{x['question']}'") or x['question']) | retriever 
+        ) |
+        RunnablePassthrough.assign( 
+             context=lambda x: combine_retrieved_documents(x["docs"])
+        )
     )
 
-    # --- RAG Deactivated: Always use the simple chain for now ---
-    logger.info("RAG functionality is currently DEACTIVATED. Forcing use of simple_chain.")
-    return simple_chain
-    # --- End of RAG Deactivated Section ---
+    def prepare_and_log_rag_input(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+        question = input_dict.get('question', 'MISSING QUESTION')
+        history = input_dict.get('chat_history', [])
+        context = input_dict.get('context', 'MISSING CONTEXT')
+        formatted_input = {
+             "question": question, 
+             "chat_history_messages": format_history_for_lc(history),
+             "context": context 
+        }
+        logger.info(f"[prepare_and_log_rag_input] Input for RAG Prompt: {formatted_input}")
+        return formatted_input
 
-    # --- RAG Chain Definition (Code below is bypassed) ---
-    # ... (The RAG chain definition code remains here but is not executed) ...
+    rag_chain_main = (
+        RunnableLambda(prepare_and_log_rag_input) |
+        rag_prompt_template_obj |
+        llm | # Use the passed LLM instance
+        StrOutputParser()
+    )
+
+    # --- Define the simple chain again for the fallback path ---
+    # (Could also call _build_simple_chain, but defining inline might be clearer for the branch)
+    prepare_simple_input_for_fallback = RunnablePassthrough.assign(
+        question=lambda x: x.get('question', 'MISSING QUESTION IN FALLBACK PREP'), 
+        chat_history_messages=lambda x: format_history_for_lc(x.get('chat_history', []))
+    )
+    def log_simple_input_fallback(prepared_input: Dict[str, Any]) -> Dict[str, Any]:
+        logger.info(f"[log_simple_input_fallback] Input for Simple Prompt (via RAG fallback): {prepared_input}")
+        return prepared_input
+        
+    simple_fallback_chain = (
+        prepare_simple_input_for_fallback |
+        RunnableLambda(log_simple_input_fallback) |
+        simple_prompt_template_obj | 
+        llm | 
+        StrOutputParser()
+    )
+
+    # --- Branching Logic ---
+    def route_based_on_docs(info: Dict[str, Any]) -> Runnable:
+        if info.get("docs"): 
+            logger.info(f"Routing to RAG chain because {len(info['docs'])} documents were retrieved.")
+            # Need to pass the input dict `info` to the chain
+            return RunnableLambda(lambda x: x) | rag_chain_main
+        else:
+            logger.info("Routing to Simple chain (fallback) because no documents were retrieved.")
+            # Need to pass the input dict `info` to the chain
+            return RunnableLambda(lambda x: x) | simple_fallback_chain
+
+    # --- Final Combined Chain ---
+    full_rag_chain = retrieval_chain_part | RunnableLambda(route_based_on_docs)
+    
+    logger.info("Built final chain with RAG fallback logic.")
+    return full_rag_chain
+
+
+# --- Main Function to Get Chain ---
+def get_rag_or_simple_chain(use_rag_flag: bool, specific_ollama_model_name: Optional[str] = None) -> Runnable:
+    """
+    Selects and returns the appropriate chain (RAG with fallback or Simple) 
+    based on the RAG_ENABLED flag and use_rag_flag.
+    """
+    # 1. Select the LLM instance
+    active_llm = _select_llm(specific_ollama_model_name)
+
+    # 2. Decide whether to use RAG or Simple based on global flag and request flag
+    if RAG_ENABLED and use_rag_flag:
+        logger.info("Attempting to build and return RAG chain with fallback.")
+        # Check if necessary RAG components are available before building
+        if chroma_client and retriever and rag_prompt_template_obj and simple_prompt_template_obj:
+             return _build_rag_chain_with_fallback(active_llm)
+        else:
+            logger.warning("RAG was enabled, but components are missing. Falling back to simple chain.")
+            return _build_simple_chain(active_llm)
+    else:
+        if not RAG_ENABLED:
+             logger.info("RAG_ENABLED is False. Building simple chain.")
+        else: # RAG_ENABLED is True, but use_rag_flag is False
+             logger.info("use_rag_flag is False. Building simple chain.")
+        return _build_simple_chain(active_llm)
 
