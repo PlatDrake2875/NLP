@@ -12,7 +12,7 @@ services:
       - VITE_API_BASE_URL=http://backend:8000
       - CHOKIDAR_USEPOLLING=true
     depends_on:
-      - backend # Depends only on backend now
+      - backend
     networks:
       - app-network
 
@@ -23,14 +23,13 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      # Point to the host machine where Ollama is running
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
       - CHROMA_HOST=chromadb
       - CHROMA_PORT=8000
       - EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
       - OLLAMA_MODEL=llama3
     depends_on:
-      - chromadb # Depends only on chromadb now
+      - chromadb
     networks:
       - app-network
     # Add extra_hosts if host.docker.internal doesn't work on Linux
@@ -38,14 +37,23 @@ services:
     #   - "host.docker.internal:host-gateway"
 
   chromadb:
-    # Pin ChromaDB to a specific version instead of using latest
-    image: chromadb/chroma:0.4.24
+    # Pin ChromaDB server to version 0.5.5
+    image: chromadb/chroma:0.5.20
     ports:
       - "8001:8000" # Host port 8001 maps to container port 8000
     volumes:
-      - chromadb_data:/chroma/chroma
+      - chromadb_data:/chroma/chroma # Persist ChromaDB data
     networks:
       - app-network
+    # ChromaDB 0.5.x server mode should be default.
+    # Explicit command can be added if server doesn't start correctly:
+    # command: "uvicorn chromadb.app:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
+    # Environment variables for server configuration (optional, defaults are usually fine)
+    # environment:
+    #   - CHROMA_SERVER_HOST=0.0.0.0
+    #   - CHROMA_SERVER_HTTP_PORT=8000
+    #   - CHROMA_PERSIST_PATH=/chroma/chroma
+    #   - ANONYMIZED_TELEMETRY=FALSE # If you want to disable telemetry
 
 volumes:
   chromadb_data:
