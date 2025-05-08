@@ -17,14 +17,21 @@ export function Sidebar({
     onDeleteSession,
     onRenameSession,
     onAutomateConversation,
-    isSubmitting,
+    isSubmitting, // General submission state for automation/chat
     automationError,
-    isInitialized // Receive initialization status
+    isInitialized, // Receive initialization status
+    // New props for PDF upload
+    onUploadPdf,
+    isUploadingPdf,
+    pdfUploadStatus, // { success: boolean, message: string } | null
 }) {
   // Only get sessionIds once initialized and sessions object is available
   const sessionIds = isInitialized ? Object.keys(sessions) : [];
   const [automationJson, setAutomationJson] = useState('{\n  "inputs": [\n    "Hello!",\n    "How are you?"\n  ]\n}');
-  const fileInputRef = useRef(null);
+  const automationFileInputRef = useRef(null); // Renamed for clarity
+  const pdfFileInputRef = useRef(null); // Ref for PDF file input
+  const [selectedPdfFile, setSelectedPdfFile] = useState(null);
+
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   const editInputRef = useRef(null);
@@ -70,15 +77,14 @@ export function Sidebar({
       if (onAutomateConversation) onAutomateConversation(automationJson, selectedModel);
   };
 
-  const handleUploadClick = () => { fileInputRef.current?.click(); };
+  const handleUploadJsonClick = () => { automationFileInputRef.current?.click(); };
 
-  const handleFileChange = (event) => {
-    // ... (file reading logic remains the same) ...
+  const handleJsonFileChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/json') {
         alert('Please select a valid JSON file (.json)');
-        if(fileInputRef.current) fileInputRef.current.value = '';
+        if(automationFileInputRef.current) automationFileInputRef.current.value = '';
         return;
     }
     const reader = new FileReader();
@@ -91,14 +97,37 @@ export function Sidebar({
         } else { throw new Error('Failed to read file content as text.'); }
       } catch (error) {
         alert(`Error reading file: ${error.message}. Please ensure it's valid JSON.`);
-      } finally { if(fileInputRef.current) fileInputRef.current.value = ''; }
+      } finally { if(automationFileInputRef.current) automationFileInputRef.current.value = ''; }
     };
-    reader.onerror = () => { alert('Error reading file.'); if(fileInputRef.current) fileInputRef.current.value = ''; };
+    reader.onerror = () => { alert('Error reading file.'); if(automationFileInputRef.current) automationFileInputRef.current.value = ''; };
     reader.readAsText(file);
   };
 
+  // --- PDF Upload Handlers ---
+  const handlePdfFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+        setSelectedPdfFile(file);
+    } else {
+        setSelectedPdfFile(null);
+        if (file) alert("Please select a PDF file."); // Alert if a file was selected but wasn't PDF
+        if (pdfFileInputRef.current) pdfFileInputRef.current.value = ''; // Reset file input
+    }
+  };
+
+  const handlePdfUploadClick = () => {
+    if (selectedPdfFile && onUploadPdf) {
+        onUploadPdf(selectedPdfFile);
+        // Optionally clear the selected file after initiating upload
+        // setSelectedPdfFile(null);
+        // if (pdfFileInputRef.current) pdfFileInputRef.current.value = '';
+    } else if (!selectedPdfFile) {
+        alert("Please select a PDF file to upload.");
+    }
+  };
+
+
   return (
-    // Apply styles using the imported object
     <div className={styles.sidebar}>
       <button onClick={onNewChat} className={styles.newChatButton}>
         + New Chat
@@ -106,7 +135,6 @@ export function Sidebar({
       <nav className={styles.conversationMenu}>
         <h2>Conversations</h2>
         <ul>
-          {/* Display loading or no chats message */}
           {!isInitialized && <li className={styles.noSessions}>Loading...</li>}
           {isInitialized && sessionIds.length === 0 && <li className={styles.noSessions}>No chats yet.</li>}
 
@@ -115,8 +143,6 @@ export function Sidebar({
             const displayName = session?.name || formatSessionIdFallback(sessionId);
             const isEditing = editingSessionId === sessionId;
             const isActive = sessionId === activeSessionId;
-
-            // Combine classes conditionally
             const itemClasses = `${styles.conversationItem} ${isActive ? styles.active : ''} ${isEditing ? styles.editing : ''}`;
 
             return (
@@ -129,13 +155,13 @@ export function Sidebar({
                     onChange={handleInputChange}
                     onKeyDown={handleInputKeyDown}
                     onBlur={handleSaveEdit}
-                    className={styles.sessionEditInput} // Use module style
+                    className={styles.sessionEditInput}
                     aria-label={`Rename chat ${displayName}`}
                   />
                 ) : (
                   <>
                     <button
-                      className={styles.sessionSelectButton} // Use module style
+                      className={styles.sessionSelectButton}
                       onClick={() => onSelectSession(sessionId)}
                       aria-current={isActive ? 'page' : undefined}
                       title={displayName}
@@ -144,7 +170,7 @@ export function Sidebar({
                     </button>
                     <button
                         onClick={(e) => handleEditClick(e, sessionId)}
-                        className={styles.editSessionButton} // Use module style
+                        className={styles.editSessionButton}
                         aria-label={`Rename ${displayName}`}
                         title={`Rename ${displayName}`}
                     >
@@ -155,7 +181,7 @@ export function Sidebar({
                 {!isEditing && (
                      <button
                         onClick={(e) => { e.stopPropagation(); onDeleteSession(sessionId); }}
-                        className={styles.deleteSessionButton} // Use module style
+                        className={styles.deleteSessionButton}
                         aria-label={`Delete ${displayName}`}
                         title={`Delete ${displayName}`}
                     >
@@ -168,26 +194,58 @@ export function Sidebar({
         </ul>
       </nav>
 
+      {/* --- PDF Upload Section --- */}
+      <div className={styles.pdfUploadSection}>
+        <h2>Upload Document</h2>
+        <input
+          type="file"
+          ref={pdfFileInputRef}
+          onChange={handlePdfFileChange}
+          accept=".pdf,application/pdf"
+          style={{ display: 'none' }}
+          id="pdf-upload-input"
+          aria-labelledby="pdf-upload-button"
+        />
+        <label htmlFor="pdf-upload-input" className={styles.pdfUploadLabelButton}>
+          {selectedPdfFile ? `Selected: ${selectedPdfFile.name.substring(0,25)}${selectedPdfFile.name.length > 25 ? '...' : ''}` : 'Choose PDF File'}
+        </label>
+        <button
+          id="pdf-upload-button"
+          onClick={handlePdfUploadClick}
+          className={styles.pdfUploadButton}
+          disabled={isUploadingPdf || !selectedPdfFile}
+          title={!selectedPdfFile ? "Select a PDF file first" : "Upload selected PDF"}
+        >
+          {isUploadingPdf ? 'Uploading...' : 'Upload PDF'}
+        </button>
+        {pdfUploadStatus && (
+          <p className={`${styles.uploadMessage} ${pdfUploadStatus.success ? styles.success : styles.error}`}>
+            {pdfUploadStatus.message}
+          </p>
+        )}
+      </div>
+
+
       {/* --- Automation Section --- */}
       <div className={styles.automationSection}>
         <div className={styles.automationHeader}>
             <h2>Automate</h2>
             <input
                 type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
+                ref={automationFileInputRef}
+                onChange={handleJsonFileChange}
                 accept=".json,application/json"
                 style={{ display: 'none' }}
                 aria-hidden="true"
             />
             <button
-                onClick={handleUploadClick}
-                className={styles.uploadJsonButton} // Use module style
-                title="Upload JSON file"
-                aria-label="Upload JSON file"
-                disabled={isSubmitting}
+                onClick={handleUploadJsonClick}
+                className={styles.uploadJsonButton}
+                title="Upload JSON file for automation"
+                aria-label="Upload JSON file for automation"
+                disabled={isSubmitting} // General submitting state
             >
-                 ⬆️ Upload
+                 ⬆️ Upload JSON
             </button>
         </div>
         <label htmlFor="automation-json-input" className={styles.automationLabel}>
@@ -195,23 +253,23 @@ export function Sidebar({
         </label>
         <textarea
           id="automation-json-input"
-          className={styles.automationTextarea} // Use module style
+          className={styles.automationTextarea}
           value={automationJson}
           onChange={(e) => setAutomationJson(e.target.value)}
-          rows={6}
+          rows={4} // Reduced rows slightly
           placeholder='{ "inputs": ["Hello!", "Tell me a joke."] }'
           aria-label="JSON input for automated conversation"
           disabled={isSubmitting}
         />
         {automationError && (
-            <p className={styles.automationErrorMessage} role="alert"> {/* Use module style */}
+            <p className={styles.automationErrorMessage} role="alert">
                 Error: {automationError}
             </p>
         )}
         <button
           onClick={handleAutomationSubmit}
-          className={styles.automationButton} // Use module style
-          disabled={isSubmitting || !activeSessionId || !selectedModel || !isInitialized} // Also disable if not initialized
+          className={styles.automationButton}
+          disabled={isSubmitting || !activeSessionId || !selectedModel || !isInitialized}
           title={!isInitialized ? "Loading..." : !activeSessionId ? "Select or create a chat first" : !selectedModel ? "Select a model first" : "Run automated conversation"}
         >
           {isSubmitting ? 'Running...' : 'Run Automation'}
@@ -222,4 +280,3 @@ export function Sidebar({
     </div>
   );
 }
-

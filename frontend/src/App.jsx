@@ -5,14 +5,14 @@ import './index.css'; // Keep importing global styles/variables
 
 // Import custom hooks
 import { useTheme } from './hooks/useTheme';
-import { useChatSessions } from './hooks/useChatSessions'; // Ensure path is correct
+import { useChatSessions } from './hooks/useChatSessions';
 
 // Import components
-import { Sidebar } from './components/Sidebar'; // Ensure path is correct
-import { ChatInterface } from './components/ChatInterface'; // Ensure path is correct
+import { Sidebar } from './components/Sidebar';
+import { ChatInterface } from './components/ChatInterface';
 
 // Define the backend API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Ensure this is correct for your setup
 
 function App() {
   const { isDarkMode, toggleTheme } = useTheme();
@@ -20,15 +20,14 @@ function App() {
     sessions,
     activeSessionId,
     activeChatHistory,
-    isInitialized, // Get initialization status
-    isSubmitting,
+    isInitialized,
+    isSubmitting: isChatSubmitting, // Renamed to avoid conflict
     automationError,
     handleNewChat,
     handleSelectSession,
     handleDeleteSession,
     handleRenameSession,
     clearActiveChatHistory,
-    // downloadActiveChatHistory, // Rebuild or move this if needed
     handleChatSubmit: originalHandleChatSubmit,
     handleAutomateConversation,
   } = useChatSessions(API_BASE_URL);
@@ -38,8 +37,12 @@ function App() {
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsError, setModelsError] = useState(null);
 
+  // --- State for PDF Upload ---
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [pdfUploadStatus, setPdfUploadStatus] = useState(null); // { success: boolean, message: string } | null
+
+
   const fetchModels = useCallback(async () => {
-    // ... (fetchModels logic remains the same) ...
      setModelsLoading(true);
     setModelsError(null);
     try {
@@ -72,7 +75,7 @@ function App() {
     } finally {
       setModelsLoading(false);
     }
-  }, [API_BASE_URL, selectedModel]); // Keep selectedModel dependency
+  }, [API_BASE_URL, selectedModel]);
 
   useEffect(() => {
     fetchModels();
@@ -86,11 +89,15 @@ function App() {
   };
 
   const handleChatSubmitWithModel = useCallback(async (query) => {
-    if (!selectedModel) { console.error("No model selected."); return; }
+    if (!selectedModel) {
+        // Consider showing an alert or message to the user in the UI
+        console.error("No model selected. Cannot submit chat.");
+        // You could update a state here to show an error in ChatInterface
+        return;
+    }
     await originalHandleChatSubmit(query, selectedModel);
   }, [selectedModel, originalHandleChatSubmit]);
 
-  // Helper function to format session names (used as fallback in Header)
   const formatSessionIdFallback = (sessionId) => {
     if (!sessionId) return "Chat";
     return sessionId.replace(/-/g, ' ').replace(/^./, str => str.toUpperCase());
@@ -98,21 +105,19 @@ function App() {
 
   const activeSessionName = useMemo(() => {
     if (!isInitialized || !activeSessionId || !sessions || !sessions[activeSessionId]) {
-      return "Chat"; // Default title when loading or no session
+      return "Chat";
     }
-    // Use custom name or format the ID as fallback
     return sessions[activeSessionId].name || formatSessionIdFallback(activeSessionId);
   }, [activeSessionId, sessions, isInitialized]);
 
-  // Rebuild download handler here if needed, accessing sessions/activeSessionId
    const downloadActiveChatHistory = useCallback(() => {
      const currentSession = (sessions && activeSessionId) ? sessions[activeSessionId] : null;
     if (!currentSession || !Array.isArray(currentSession.history) || currentSession.history.length === 0) {
         alert("No history to download for the current chat.");
         return;
     }
-    const historyToDownload = currentSession.history; // Get the history array
-    const json = JSON.stringify(historyToDownload, null, 2); // Format it
+    const historyToDownload = currentSession.history;
+    const json = JSON.stringify(historyToDownload, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -125,9 +130,49 @@ function App() {
     URL.revokeObjectURL(url);
   }, [activeSessionId, sessions]);
 
+  // --- PDF Upload Handler ---
+  const handlePdfUpload = useCallback(async (file) => {
+    if (!file) return;
+
+    setIsUploadingPdf(true);
+    setPdfUploadStatus(null); // Clear previous status
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: 'POST',
+        body: formData,
+        // Note: 'Content-Type' header is automatically set by the browser for FormData
+      });
+
+      const result = await response.json(); // Assuming backend sends JSON response
+
+      if (!response.ok) {
+        // Use detail from backend if available, otherwise use a generic message
+        const errorMessage = result.detail || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      // Example success message from your backend schema:
+      // { message: "Document processed...", filename: "...", chunks_added: ... }
+      setPdfUploadStatus({ success: true, message: result.message || 'PDF uploaded successfully!' });
+      // Clear message after a few seconds
+      setTimeout(() => setPdfUploadStatus(null), 5000);
+
+    } catch (error) {
+      console.error('Error uploading PDF:', error);
+      setPdfUploadStatus({ success: false, message: error.message || 'PDF upload failed.' });
+      // Optionally, clear error message after some time, or let user dismiss it
+      // setTimeout(() => setPdfUploadStatus(null), 7000);
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  }, [API_BASE_URL]);
+
 
   return (
-    // Apply the main layout class from the CSS module
     <div className={styles.App}>
       <Sidebar
         sessions={sessions}
@@ -138,19 +183,23 @@ function App() {
         onDeleteSession={handleDeleteSession}
         onRenameSession={handleRenameSession}
         onAutomateConversation={handleAutomateConversation}
-        isSubmitting={isSubmitting}
+        isSubmitting={isChatSubmitting} // Pass chat submission status
         automationError={automationError}
-        isInitialized={isInitialized} // Pass init status if Sidebar needs it
+        isInitialized={isInitialized}
+        // PDF Upload props
+        onUploadPdf={handlePdfUpload}
+        isUploadingPdf={isUploadingPdf}
+        pdfUploadStatus={pdfUploadStatus}
       />
       <ChatInterface
         key={`${activeSessionId || 'no-session'}-${activeChatHistory.length}`}
         activeSessionId={activeSessionId}
-        activeSessionName={activeSessionName} // Pass calculated name
+        activeSessionName={activeSessionName}
         chatHistory={activeChatHistory}
         onSubmit={handleChatSubmitWithModel}
         onClearHistory={clearActiveChatHistory}
-        onDownloadHistory={downloadActiveChatHistory} // Pass rebuilt handler
-        isSubmitting={isSubmitting}
+        onDownloadHistory={downloadActiveChatHistory}
+        isSubmitting={isChatSubmitting} // Pass chat submission status
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
         availableModels={availableModels}
@@ -158,7 +207,7 @@ function App() {
         onModelChange={handleModelChange}
         modelsLoading={modelsLoading}
         modelsError={modelsError}
-        isInitialized={isInitialized} // Pass init status
+        isInitialized={isInitialized}
       />
     </div>
   );

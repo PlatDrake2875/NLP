@@ -1,6 +1,6 @@
 # backend/schemas.py
 import logging
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -8,7 +8,7 @@ logger = logging.getLogger("nlp_backend.schemas") # Logger for this module
 
 # --- Pydantic Models ---
 class OllamaModelInfo(BaseModel):
-    name: str  
+    name: str
     modified_at: str # Storing as string as per your original model
     size: int
 
@@ -35,11 +35,11 @@ class OllamaModelInfo(BaseModel):
                 modified_at_str = modified_at_val # Keep as is if parsing fails
         else:
             logger.warning(f"modified_at value is not a datetime object or string: {modified_at_val}. Setting to 'N/A'.")
-            modified_at_str = "N/A" 
-            
+            modified_at_str = "N/A"
+
         return cls(
             name=model_name,
-            modified_at=modified_at_str,  
+            modified_at=modified_at_str,
             size=raw.get("size", 0)
         )
 
@@ -82,3 +82,20 @@ class HealthResponse(BaseModel):
     status: str
     ollama: HealthStatusDetail
     chromadb: HealthStatusDetail
+
+# --- Schemas for Document Chunks ---
+class DocumentChunk(BaseModel):
+    """Represents a single document chunk retrieved from the vector store."""
+    id: str
+    content: str = Field(..., alias="page_content") # Use alias if field name differs
+    metadata: Dict[str, Any] = {}
+
+    class Config:
+        # Correct Pydantic V2 config key
+        populate_by_name = True
+
+
+class DocumentListResponse(BaseModel):
+    """Response model for listing all document chunks."""
+    count: int
+    documents: List[DocumentChunk]
