@@ -4,7 +4,7 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Prevent viewer itself from scrolling */
+  overflow: hidden;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -12,20 +12,67 @@
 
 .viewerHeader {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* Space out left/right sections */
   align-items: center;
   padding: 0.75rem 1.5rem;
-  background-color: var(--bg-secondary); /* Use secondary for header */
+  background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-primary);
   flex-shrink: 0;
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  gap: 1rem; /* Add gap between header sections */
+}
+
+/* Container for title */
+.headerLeft {
+    flex-grow: 1; /* Allow title to take space */
+    min-width: 0; /* Prevent pushing controls */
 }
 
 .viewerHeader h1 {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* Container for dropdown and back button */
+.headerControls {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* Space between dropdown and button */
+    flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+.sourceSelectorContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sourceSelectLabel {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.sourceSelect {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-select);
+    background-color: var(--bg-button-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    min-width: 180px; /* Adjust width as needed */
+    max-width: 300px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.sourceSelect:hover {
+    border-color: var(--border-focus);
+}
+
 
 .backButton {
   background-color: var(--bg-button-secondary);
@@ -46,9 +93,8 @@
 
 .viewerContent {
   flex-grow: 1;
-  overflow-y: auto; /* Allow content area to scroll */
+  overflow-y: auto;
   padding: 1.5rem;
-   /* Subtle scrollbar styling */
    scrollbar-width: thin;
    scrollbar-color: var(--bg-button-secondary) transparent;
 }
@@ -61,7 +107,7 @@
 .viewerContent::-webkit-scrollbar-thumb {
   background-color: var(--bg-button-secondary);
   border-radius: 10px;
-  border: 2px solid var(--bg-primary); /* Creates padding around thumb */
+  border: 2px solid var(--bg-primary);
 }
 
 
@@ -72,6 +118,7 @@
   color: var(--text-secondary);
   font-style: italic;
   margin-top: 2rem;
+  font-size: 1rem;
 }
 
 .errorMessage {
@@ -79,6 +126,11 @@
   font-style: normal;
   font-weight: 500;
 }
+
+/* Remove group styles as we filter now */
+/* .documentGroup { ... } */
+/* .groupHeading { ... } */
+
 
 .documentList {
   list-style: none;
@@ -90,7 +142,7 @@
 }
 
 .documentItem {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-secondary); /* Use secondary for item background */
   border: 1px solid var(--border-primary);
   border-radius: 8px;
   margin-bottom: 1rem;
@@ -98,6 +150,10 @@
   transition: background-color 0.3s ease, border-color 0.3s ease;
   box-shadow: var(--shadow-sm);
 }
+.documentItem:last-child {
+    margin-bottom: 0;
+}
+
 
 .documentMetadata {
   font-size: 0.8rem;
@@ -105,7 +161,7 @@
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px dashed var(--border-primary);
-  word-break: break-all; /* Break long IDs */
+  word-break: break-all;
 }
 
 .documentMetadata strong {
@@ -114,17 +170,16 @@
 }
 
 .documentContent {
-  font-family: 'Courier New', Courier, monospace; /* Use monospace for content */
+  font-family: 'Courier New', Courier, monospace;
   font-size: 0.9rem;
-  white-space: pre-wrap; /* Wrap long lines but preserve whitespace */
+  white-space: pre-wrap;
   word-wrap: break-word;
-  background-color: var(--bg-primary); /* Slightly different background */
+  background-color: var(--bg-primary); /* Use primary for content background */
   padding: 0.75rem;
   border-radius: 4px;
   color: var(--text-primary);
-  max-height: 300px; /* Limit height and make scrollable if needed */
+  max-height: 300px;
   overflow-y: auto;
-   /* Subtle scrollbar styling */
    scrollbar-width: thin;
    scrollbar-color: var(--bg-button-secondary) transparent;
 }
