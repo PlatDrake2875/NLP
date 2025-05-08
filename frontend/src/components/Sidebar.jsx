@@ -20,18 +20,18 @@ export function Sidebar({
     isSubmitting, // General submission state for automation/chat
     automationError,
     isInitialized, // Receive initialization status
-    // New props for PDF upload
+    // PDF upload props
     onUploadPdf,
     isUploadingPdf,
-    pdfUploadStatus, // { success: boolean, message: string } | null
+    pdfUploadStatus,
+    // New prop for switching view
+    onViewDocuments
 }) {
-  // Only get sessionIds once initialized and sessions object is available
   const sessionIds = isInitialized ? Object.keys(sessions) : [];
   const [automationJson, setAutomationJson] = useState('{\n  "inputs": [\n    "Hello!",\n    "How are you?"\n  ]\n}');
-  const automationFileInputRef = useRef(null); // Renamed for clarity
-  const pdfFileInputRef = useRef(null); // Ref for PDF file input
+  const automationFileInputRef = useRef(null);
+  const pdfFileInputRef = useRef(null);
   const [selectedPdfFile, setSelectedPdfFile] = useState(null);
-
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   const editInputRef = useRef(null);
@@ -103,24 +103,25 @@ export function Sidebar({
     reader.readAsText(file);
   };
 
-  // --- PDF Upload Handlers ---
   const handlePdfFileChange = (event) => {
     const file = event.target.files?.[0];
     if (file && file.type === "application/pdf") {
         setSelectedPdfFile(file);
+        // Clear upload status when a new file is selected
+        if (pdfUploadStatus) onUploadPdf(null); // Pass null to clear status in App.jsx if needed
     } else {
         setSelectedPdfFile(null);
-        if (file) alert("Please select a PDF file."); // Alert if a file was selected but wasn't PDF
-        if (pdfFileInputRef.current) pdfFileInputRef.current.value = ''; // Reset file input
+        if (file) alert("Please select a PDF file.");
+        if (pdfFileInputRef.current) pdfFileInputRef.current.value = '';
     }
   };
 
   const handlePdfUploadClick = () => {
     if (selectedPdfFile && onUploadPdf) {
         onUploadPdf(selectedPdfFile);
-        // Optionally clear the selected file after initiating upload
-        // setSelectedPdfFile(null);
-        // if (pdfFileInputRef.current) pdfFileInputRef.current.value = '';
+        // Clear selection after upload attempt
+        setSelectedPdfFile(null);
+        if (pdfFileInputRef.current) pdfFileInputRef.current.value = '';
     } else if (!selectedPdfFile) {
         alert("Please select a PDF file to upload.");
     }
@@ -129,9 +130,17 @@ export function Sidebar({
 
   return (
     <div className={styles.sidebar}>
-      <button onClick={onNewChat} className={styles.newChatButton}>
-        + New Chat
-      </button>
+       {/* Top Buttons Section */}
+       <div className={styles.sidebarTopActions}>
+            <button onClick={onNewChat} className={styles.newChatButton}>
+                + New Chat
+            </button>
+            {/* Add the View Documents Button */}
+            <button onClick={onViewDocuments} className={styles.viewDocumentsButton}>
+                View Documents
+            </button>
+       </div>
+
       <nav className={styles.conversationMenu}>
         <h2>Conversations</h2>
         <ul>
@@ -256,7 +265,7 @@ export function Sidebar({
           className={styles.automationTextarea}
           value={automationJson}
           onChange={(e) => setAutomationJson(e.target.value)}
-          rows={4} // Reduced rows slightly
+          rows={4}
           placeholder='{ "inputs": ["Hello!", "Tell me a joke."] }'
           aria-label="JSON input for automated conversation"
           disabled={isSubmitting}
@@ -280,3 +289,4 @@ export function Sidebar({
     </div>
   );
 }
+

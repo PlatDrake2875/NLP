@@ -37,11 +37,13 @@ async def get_all_documents(
             logger.info(f"Accessed ChromaDB collection: {collection_name}")
         except Exception as e_coll:
              logger.error(f"Failed to get ChromaDB collection '{collection_name}': {e_coll}", exc_info=True)
+             # Provide a more specific error if possible, e.g., collection not found?
              raise HTTPException(status_code=500, detail=f"Could not access vector store collection '{collection_name}': {str(e_coll)}")
 
         # Retrieve all documents
         try:
-            results = collection.get(include=["documents", "metadatas"])
+            results = collection.get(include=["metadatas", "documents"])
+            logger.debug(f"ChromaDB get results: {results}") # Log the raw results
         except Exception as e_get:
              logger.error(f"Failed to retrieve documents from collection '{collection_name}': {e_get}", exc_info=True)
              raise HTTPException(status_code=500, detail=f"Could not retrieve documents from vector store: {str(e_get)}")
@@ -66,21 +68,24 @@ async def get_all_documents(
             content = contents[i] if contents and i < len(contents) else ""
             metadata = metadatas[i] if metadatas and i < len(metadatas) else {}
             if metadata is None: metadata = {}
+            if content is None: content = ""
 
             doc_chunks.append(
                 DocumentChunk(
                     id=doc_id,
-                    page_content=content,
+                    page_content=content, # Pydantic model uses alias 'content'
                     metadata=metadata
                 )
             )
 
-        logger.info(f"Retrieved {len(doc_chunks)} document chunks.")
+        logger.info(f"Successfully processed {len(doc_chunks)} document chunks.")
         return DocumentListResponse(count=len(doc_chunks), documents=doc_chunks)
 
     except HTTPException as e_http:
+        # Re-raise specific HTTP exceptions
         raise e_http
     except Exception as e:
+        # Catch any other unexpected errors during processing
         logger.error(f"Unexpected error retrieving documents: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred while retrieving documents: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An unexpected server error occurred while retrieving documents: {str(e)}")
 

@@ -1,0 +1,140 @@
+/* src/components/DocumentViewer.module.css */
+
+.documentViewer {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent viewer itself from scrolling */
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.viewerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--bg-secondary); /* Use secondary for header */
+  border-bottom: 1px solid var(--border-primary);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.viewerHeader h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.backButton {
+  background-color: var(--bg-button-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: var(--bg-button-secondary-hover);
+  border-color: var(--border-focus);
+}
+
+.viewerContent {
+  flex-grow: 1;
+  overflow-y: auto; /* Allow content area to scroll */
+  padding: 1.5rem;
+   /* Subtle scrollbar styling */
+   scrollbar-width: thin;
+   scrollbar-color: var(--bg-button-secondary) transparent;
+}
+.viewerContent::-webkit-scrollbar {
+  width: 8px;
+}
+.viewerContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+.viewerContent::-webkit-scrollbar-thumb {
+  background-color: var(--bg-button-secondary);
+  border-radius: 10px;
+  border: 2px solid var(--bg-primary); /* Creates padding around thumb */
+}
+
+
+.loadingMessage,
+.errorMessage,
+.noDocumentsMessage {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 2rem;
+}
+
+.errorMessage {
+  color: var(--text-error);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.documentList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 900px; /* Limit width for readability */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.documentItem {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.documentMetadata {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed var(--border-primary);
+  word-break: break-all; /* Break long IDs */
+}
+
+.documentMetadata strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.documentContent {
+  font-family: 'Courier New', Courier, monospace; /* Use monospace for content */
+  font-size: 0.9rem;
+  white-space: pre-wrap; /* Wrap long lines but preserve whitespace */
+  word-wrap: break-word;
+  background-color: var(--bg-primary); /* Slightly different background */
+  padding: 0.75rem;
+  border-radius: 4px;
+  color: var(--text-primary);
+  max-height: 300px; /* Limit height and make scrollable if needed */
+  overflow-y: auto;
+   /* Subtle scrollbar styling */
+   scrollbar-width: thin;
+   scrollbar-color: var(--bg-button-secondary) transparent;
+}
+.documentContent::-webkit-scrollbar {
+  width: 6px;
+}
+.documentContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+.documentContent::-webkit-scrollbar-thumb {
+  background-color: var(--bg-button-secondary);
+  border-radius: 10px;
+}

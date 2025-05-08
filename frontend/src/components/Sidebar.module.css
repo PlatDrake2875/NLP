@@ -12,6 +12,14 @@
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+/* New container for top buttons */
+.sidebarTopActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Space between buttons */
+  margin-bottom: 1rem; /* Space below buttons */
+}
+
 .newChatButton {
   background-color: transparent;
   color: var(--text-primary);
@@ -22,7 +30,7 @@
   font-weight: 500;
   cursor: pointer;
   text-align: center;
-  margin-bottom: 1rem;
+  /* margin-bottom: 1rem; Remove bottom margin */
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   width: 100%;
 }
@@ -32,12 +40,33 @@
   border-color: var(--bg-button-secondary);
 }
 
+/* Style for the new View Documents button */
+.viewDocumentsButton {
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  width: 100%;
+}
+
+.viewDocumentsButton:hover {
+  background-color: var(--bg-button-secondary);
+  border-color: var(--bg-button-secondary);
+}
+
+
 .conversationMenu {
   flex-grow: 1;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--bg-button-secondary) transparent;
-  margin-bottom: 1rem; /* Add some space before PDF upload section */
+  margin-bottom: 1rem;
 }
 .conversationMenu::-webkit-scrollbar {
   width: 6px;
@@ -78,14 +107,14 @@
 }
 
 .conversationItem.active:not(.editing) {
-    background-color: var(--bg-button-secondary-hover);
-    color: var(--text-primary);
+  background-color: var(--bg-button-secondary-hover);
+  color: var(--text-primary);
 }
 
 .conversationItem.active:not(.editing) .sessionSelectButton,
 .conversationItem.active:not(.editing) .deleteSessionButton,
 .conversationItem.active:not(.editing) .editSessionButton {
-    color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 
@@ -107,24 +136,24 @@
 }
 
 .sessionSelectButton:hover {
-    color: var(--text-primary);
+  color: var(--text-primary);
 }
 .conversationItem.active .sessionSelectButton {
-     color: var(--text-primary);
+   color: var(--text-primary);
 }
 
 
 .sessionEditInput {
-    flex-grow: 1;
-    padding: 0.5rem 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 500;
-    border: 1px solid var(--border-focus);
-    border-radius: 4px;
-    background-color: var(--bg-edit-input);
-    color: var(--text-primary);
-    outline: none;
-    margin-right: auto;
+  flex-grow: 1;
+  padding: 0.5rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid var(--border-focus);
+  border-radius: 4px;
+  background-color: var(--bg-edit-input);
+  color: var(--text-primary);
+  outline: none;
+  margin-right: auto;
 }
 
 .editSessionButton,
@@ -145,20 +174,20 @@
 
 .conversationItem:hover .editSessionButton,
 .conversationItem:hover .deleteSessionButton {
-    opacity: 1;
-    color: var(--text-primary);
+  opacity: 1;
+  color: var(--text-primary);
 }
 
 .editSessionButton:focus,
 .deleteSessionButton:focus {
-    opacity: 1;
-    color: var(--text-primary);
+  opacity: 1;
+  color: var(--text-primary);
 }
 
 .conversationItem.active .editSessionButton,
 .conversationItem.active .deleteSessionButton {
-     color: var(--text-primary);
-     opacity: 1;
+   color: var(--text-primary);
+   opacity: 1;
 }
 
 
@@ -175,8 +204,8 @@
   border-top: 1px solid var(--border-primary);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem; /* Space between elements */
-  margin-bottom: 1rem; /* Space before automation section */
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .pdfUploadSection h2 {
@@ -188,7 +217,6 @@
   padding: 0 0.5rem;
 }
 
-/* Style the label to look like a button for choosing file */
 .pdfUploadLabelButton {
   display: block;
   background-color: transparent;
@@ -244,33 +272,32 @@
 }
 
 .uploadMessage.success {
-  color: var(--text-accent); /* Or a specific success color like green */
-  background-color: var(--bg-accent); /* Or a light green */
-  border: 1px solid var(--bg-button-primary); /* Or a success border color */
+  color: var(--text-accent);
+  background-color: var(--bg-accent);
+  border: 1px solid var(--bg-button-primary);
 }
-/* Dark mode specific success if needed */
 body.dark-mode .uploadMessage.success {
-  color: #a7f3d0; /* Light green text */
-  background-color: #047857; /* Dark green bg */
+  color: #a7f3d0;
+  background-color: #047857;
   border-color: var(--bg-button-primary);
 }
 
 
 .uploadMessage.error {
   color: var(--text-error);
-  background-color: #fed7d7; /* Light red background */
+  background-color: #fed7d7;
   border: 1px solid var(--border-error);
 }
 body.dark-mode .uploadMessage.error {
-  background-color: #4a2a2a; /* Dark red background */
-  color: var(--text-error); /* Use dark theme error text */
+  background-color: #4a2a2a;
+  color: var(--text-error);
   border: 1px solid var(--border-error);
 }
 
 
 /* --- Automation Section --- */
 .automationSection {
-  margin-top: auto; /* Pushes this section to the bottom */
+  margin-top: auto;
   padding-top: 1rem;
   border-top: 1px solid var(--border-primary);
   display: flex;
@@ -332,7 +359,7 @@ body.dark-mode .uploadMessage.error {
   background-color: var(--bg-input);
   color: var(--text-primary);
   resize: vertical;
-  min-height: 60px; /* Reduced min-height */
+  min-height: 60px;
   transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -385,3 +412,4 @@ body.dark-mode .uploadMessage.error {
   margin-top: -0.25rem;
   font-style: italic;
 }
+

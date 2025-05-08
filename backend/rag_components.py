@@ -40,9 +40,7 @@ simple_prompt_template_obj: Optional[ChatPromptTemplate] = None
 # --- Control Flag ---
 RAG_ENABLED = False # Set to True to re-enable RAG functionality
 
-
 # --- Dependency Functions ---
-# Define these *after* the global variables they will access
 
 def get_chroma_client() -> chromadb.HttpClient:
     """Dependency function to get the initialized ChromaDB client."""

@@ -1,7 +1,7 @@
 // HIA/frontend/src/App.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import styles from './App.module.css'; // Import App CSS Module
-import './index.css'; // Keep importing global styles/variables
+import styles from './App.module.css';
+import './index.css';
 
 // Import custom hooks
 import { useTheme } from './hooks/useTheme';
@@ -10,9 +10,10 @@ import { useChatSessions } from './hooks/useChatSessions';
 // Import components
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { DocumentViewer } from './components/DocumentViewer'; // Import the new component
 
 // Define the backend API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Ensure this is correct for your setup
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function App() {
   const { isDarkMode, toggleTheme } = useTheme();
@@ -21,7 +22,7 @@ function App() {
     activeSessionId,
     activeChatHistory,
     isInitialized,
-    isSubmitting: isChatSubmitting, // Renamed to avoid conflict
+    isSubmitting: isChatSubmitting,
     automationError,
     handleNewChat,
     handleSelectSession,
@@ -36,11 +37,11 @@ function App() {
   const [selectedModel, setSelectedModel] = useState('');
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsError, setModelsError] = useState(null);
-
-  // --- State for PDF Upload ---
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
-  const [pdfUploadStatus, setPdfUploadStatus] = useState(null); // { success: boolean, message: string } | null
+  const [pdfUploadStatus, setPdfUploadStatus] = useState(null);
 
+  // --- State for View Management ---
+  const [currentView, setCurrentView] = useState('chat'); // 'chat' or 'documents'
 
   const fetchModels = useCallback(async () => {
      setModelsLoading(true);
@@ -90,9 +91,7 @@ function App() {
 
   const handleChatSubmitWithModel = useCallback(async (query) => {
     if (!selectedModel) {
-        // Consider showing an alert or message to the user in the UI
         console.error("No model selected. Cannot submit chat.");
-        // You could update a state here to show an error in ChatInterface
         return;
     }
     await originalHandleChatSubmit(query, selectedModel);
@@ -130,12 +129,15 @@ function App() {
     URL.revokeObjectURL(url);
   }, [activeSessionId, sessions]);
 
-  // --- PDF Upload Handler ---
   const handlePdfUpload = useCallback(async (file) => {
-    if (!file) return;
+    if (!file) {
+        // If called with null, just clear the status
+        setPdfUploadStatus(null);
+        return;
+    };
 
     setIsUploadingPdf(true);
-    setPdfUploadStatus(null); // Clear previous status
+    setPdfUploadStatus(null);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -144,32 +146,34 @@ function App() {
       const response = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
         body: formData,
-        // Note: 'Content-Type' header is automatically set by the browser for FormData
       });
 
-      const result = await response.json(); // Assuming backend sends JSON response
+      const result = await response.json();
 
       if (!response.ok) {
-        // Use detail from backend if available, otherwise use a generic message
         const errorMessage = result.detail || `HTTP error! status: ${response.status}`;
         throw new Error(errorMessage);
       }
-      
-      // Example success message from your backend schema:
-      // { message: "Document processed...", filename: "...", chunks_added: ... }
+
       setPdfUploadStatus({ success: true, message: result.message || 'PDF uploaded successfully!' });
-      // Clear message after a few seconds
       setTimeout(() => setPdfUploadStatus(null), 5000);
 
     } catch (error) {
       console.error('Error uploading PDF:', error);
       setPdfUploadStatus({ success: false, message: error.message || 'PDF upload failed.' });
-      // Optionally, clear error message after some time, or let user dismiss it
-      // setTimeout(() => setPdfUploadStatus(null), 7000);
     } finally {
       setIsUploadingPdf(false);
     }
   }, [API_BASE_URL]);
+
+  // --- View Switching Handlers ---
+  const handleViewDocuments = () => {
+    setCurrentView('documents');
+  };
+
+  const handleBackToChat = () => {
+    setCurrentView('chat');
+  };
 
 
   return (
@@ -183,34 +187,42 @@ function App() {
         onDeleteSession={handleDeleteSession}
         onRenameSession={handleRenameSession}
         onAutomateConversation={handleAutomateConversation}
-        isSubmitting={isChatSubmitting} // Pass chat submission status
+        isSubmitting={isChatSubmitting}
         automationError={automationError}
         isInitialized={isInitialized}
         // PDF Upload props
         onUploadPdf={handlePdfUpload}
         isUploadingPdf={isUploadingPdf}
         pdfUploadStatus={pdfUploadStatus}
+        // View switching prop
+        onViewDocuments={handleViewDocuments}
       />
-      <ChatInterface
-        key={`${activeSessionId || 'no-session'}-${activeChatHistory.length}`}
-        activeSessionId={activeSessionId}
-        activeSessionName={activeSessionName}
-        chatHistory={activeChatHistory}
-        onSubmit={handleChatSubmitWithModel}
-        onClearHistory={clearActiveChatHistory}
-        onDownloadHistory={downloadActiveChatHistory}
-        isSubmitting={isChatSubmitting} // Pass chat submission status
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        availableModels={availableModels}
-        selectedModel={selectedModel}
-        onModelChange={handleModelChange}
-        modelsLoading={modelsLoading}
-        modelsError={modelsError}
-        isInitialized={isInitialized}
-      />
+      {/* Conditionally render the main content area */}
+      {currentView === 'chat' ? (
+        <ChatInterface
+          key={`${activeSessionId || 'no-session'}-${activeChatHistory.length}`}
+          activeSessionId={activeSessionId}
+          activeSessionName={activeSessionName}
+          chatHistory={activeChatHistory}
+          onSubmit={handleChatSubmitWithModel}
+          onClearHistory={clearActiveChatHistory}
+          onDownloadHistory={downloadActiveChatHistory}
+          isSubmitting={isChatSubmitting}
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
+          availableModels={availableModels}
+          selectedModel={selectedModel}
+          onModelChange={handleModelChange}
+          modelsLoading={modelsLoading}
+          modelsError={modelsError}
+          isInitialized={isInitialized}
+        />
+      ) : (
+        <DocumentViewer onBackToChat={handleBackToChat} />
+      )}
     </div>
   );
 }
 
 export default App;
+

@@ -59,14 +59,16 @@ if __name__ == "__main__":
     import uvicorn
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
-    reload_flag = os.getenv("RELOAD", "true").lower() == "true" # Allow disabling reload via env var
+    # reload_flag = os.getenv("RELOAD", "true").lower() == "true" # Keep original logic commented if needed
 
+    # --- Disable reload explicitly ---
+    reload_flag = False
     logger.info(f"Starting Uvicorn server directly from main.py on {host}:{port} (Reload: {reload_flag})...")
     uvicorn.run(
         "main:app",
         host=host,
         port=port,
-        reload=reload_flag, # Use the flag
+        reload=reload_flag, # Explicitly set to False
         log_level="info"
     )
 
