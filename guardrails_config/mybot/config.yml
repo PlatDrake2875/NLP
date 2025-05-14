@@ -1,32 +1,37 @@
-# NLP/guardrails_config/config.yml
-
+# Super Minimal config.yml for debugging - Attempt 2
 models:
   - type: main
     engine: ollama
-    model: gemma3:latest # Or your preferred model like gemma3:latest
+    model: gemma3:latest # Make sure this model is available in your Ollama instance
     parameters:
-      base_url: http://host.docker.internal:11434
+      base_url: http://host.docker.internal:11434 # This must be correct for Guardrails to reach Ollama
 
-prompts:
-  - path: definitions/prompts.yml
+# Explicitly define common top-level configuration sections as empty dictionaries or lists
+# as appropriate for their typical structure, to avoid problematic defaults.
+config: {} # For general config options, usually a dictionary
 
-colang_files:
-  - path: definitions/rails.co
+instructions: [] # Usually a list of instruction sets
 
-instructions:
-  - type: general
-    content: |
-      You are an aviation expert. Only answer aviation-related questions.
-      If a question is not about aviation, politely state that you can only answer aviation-related questions.
+prompts: [] # Usually a list of prompt definitions or tasks
 
-rails:
+dialog_examples: [] # Usually a list of dialog examples
+
+colang_files: [] # Usually a list of .co files to include
+
+actions_server_url: null # Set to null or comment out if not used
+
+user_messages: {} # Expected to be a dictionary of canonical user messages
+bot_messages: {} # Expected to be a dictionary of canonical bot messages
+flows: [] # Usually a list of flow definitions (dictionaries)
+
+rails: # Rails configuration itself
+  dialog: {} # Sub-sections also defined, even if empty
   input:
-    flows:
-      - self check input
-      - check aviation topic
+    flows: []
   output:
-    flows:
-      - self check output
+    flows: []
+  retrieval: {}
+  config_info: {}
 
 logging:
-  level: DEBUG
+  level: DEBUG # Keep logging verbose for debugging

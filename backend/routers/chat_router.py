@@ -116,6 +116,7 @@ async def _guardrails_ollama_stream(
     guardrails_payload = {
         "model": model_name_for_guardrails,
         "messages": messages_payload,
+        "config_id": "mybot",
         "stream": True,
     }
 

@@ -19,18 +19,20 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000" # Expose backend to host
+      - "8000:8000" # Expose backend's internal port 8000 to host port 8000
     volumes:
       - ./backend:/app # Mount backend code
     environment:
       # User's existing environment variables:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434 # For backend to directly access Ollama on host
       - CHROMA_HOST=chromadb
-      - CHROMA_PORT=8000 # ChromaDB's internal port
+      - CHROMA_PORT=8000 # ChromaDB's internal port (service-to-service)
       - EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
-      - OLLAMA_MODEL=llama3
-      # Added for NeMo Guardrails:
-      - NEMO_GUARDRAILS_SERVER_URL=http://nemo-guardrails:8001 # Backend to Guardrails service
+      - OLLAMA_MODEL=llama3 # Ensure this is consistent with your config.py (OLLAMA_MODEL_FOR_RAG)
+      # Corrected for NeMo Guardrails:
+      # Backend will connect to nemo-guardrails service on its internal port 8001, using the full API path.
+      - NEMO_GUARDRAILS_SERVER_URL=http://nemo-guardrails:8001
+      # Consider adding LOG_LEVEL=INFO and GUARDRAILS_ENABLED=True if needed from previous versions
     depends_on:
       - chromadb
       - nemo-guardrails # Ensure guardrails starts before backend
@@ -40,31 +42,37 @@ services:
     # for the backend to reach host Ollama (if it needs to directly).
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
+    # Added command to run the backend FastAPI application
 
 
   nemo-guardrails:
-    build: ./nemo_guardrails_build
+    build: ./nemo_guardrails_build # Assumes Dockerfile is in ./nemo_guardrails_build/
     volumes:
       - ./guardrails_config:/app/config/guardrails_config 
     command: >-
       nemoguardrails server
-        --config /app/config/guardrails_config
-        --default-config-id mybot
+        --config /app/config/guardrails_config  
+        --default-config-id mybot               
+        --port=8001                                                                      
     ports:
+      # Maps host port 8002 to container port 8001 (where NeMo Guardrails is now listening).
       - "8002:8001"
     networks: [app-network]
+    # Consider adding environment variables like LOG_LEVEL and NEMO_GUARDRAILS_CONFIG_PATH if needed
 
 
   chromadb:
     image: chromadb/chroma:0.5.20 # User-specified version
     ports:
-      - "8001:8000" # Host port 8001 maps to container port 8000
+      # Changed host port from 8001 to 8003 for clarity on the host machine.
+      # Maps host port 8003 to container port 8000 (ChromaDB's default internal port).
+      - "8003:8000" 
     volumes:
-      - chromadb_data:/chroma/chroma # Persist ChromaDB data
+      - chromadb_data:/chroma/chroma 
     networks:
       - app-network
     # environment:
-    #   - ANONYMIZED_TELEMETRY=FALSE
+    #   - ANONYMIZED_TELEMETRY=FALSE # Uncomment to disable telemetry if desired
 
 volumes:
   chromadb_data: # Persists ChromaDB data

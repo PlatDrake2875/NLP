@@ -1,4 +1,4 @@
-# NLP/guardrails_config/definitions/rails.co
+# NLP/guardrails_config/rails.co
 
 # Basic input self-check
 define flow self check input

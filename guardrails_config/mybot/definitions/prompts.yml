@@ -1,4 +1,4 @@
-# NLP/guardrails_config/definitions/prompts.yml
+# NLP/guardrails_config/prompts.yml
 
 - task: self_check_input
   content: |

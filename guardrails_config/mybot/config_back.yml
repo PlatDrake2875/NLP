@@ -1,0 +1,32 @@
+# NLP/guardrails_config/config.yml
+
+models:
+  - type: main
+    engine: ollama
+    model: gemma3:latest # Or your preferred model like gemma3:latest
+    parameters:
+      base_url: http://host.docker.internal:11434
+
+prompts:
+  - path: definitions/prompts.yml
+
+colang_files:
+  - path: definitions/rails.co
+
+instructions:
+  - type: general
+    content: |
+      You are an aviation expert. Only answer aviation-related questions.
+      If a question is not about aviation, politely state that you can only answer aviation-related questions.
+
+rails:
+  input:
+    flows:
+      - self check input
+      - check aviation topic
+  output:
+    flows:
+      - self check output
+
+logging:
+  level: DEBUG
