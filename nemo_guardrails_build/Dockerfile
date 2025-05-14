@@ -20,4 +20,4 @@ EXPOSE 8001
 # Command to run the NeMo Guardrails server.
 # Point --config to the DIRECTORY /app/config.
 # The server will then look for config.yml (and other .yml/.co files) inside it.
-CMD ["nemoguardrails", "server", "--config", "/app/config/config.yml", "--port", "8001"]
+CMD ["nemoguardrails", "server", "--config", "/app/config/mybot/config.yml", "--port", "8001"]

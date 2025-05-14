@@ -48,9 +48,8 @@ services:
       - ./guardrails_config:/app/config/guardrails_config 
     command: >-
       nemoguardrails server
-        --config /app/config             
-        --default-config-id guardrails_config
-        --port 8001
+        --config /app/config/guardrails_config
+        --default-config-id mybot
     ports:
       - "8002:8001"
     networks: [app-network]
