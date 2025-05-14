@@ -7,7 +7,8 @@ from contextlib import asynccontextmanager
 
 # Import configurations, routers, and setup functions
 from config import logger
-from routers import model_router, chat_router, upload_router, health_router, document_router
+# Updated to include automate_router
+from routers import model_router, chat_router, upload_router, health_router, document_router, automate_router
 from rag_components import setup_rag_components # Import the setup function
 
 
@@ -48,11 +49,13 @@ async def read_root():
     logger.info("Root endpoint '/' accessed.")
     return {"message": "Welcome to the NLP Backend API with RAG support. See /docs for API documentation."}
 
-app.include_router(model_router.router, prefix="/api")
-app.include_router(chat_router.router, prefix="/api")
-app.include_router(upload_router.router, prefix="/api")
-app.include_router(health_router.router, prefix="/api")
-app.include_router(document_router.router, prefix="/api")
+app.include_router(health_router.router)
+app.include_router(chat_router.router, prefix="/api", tags=["Chat Endpoints"]) 
+app.include_router(model_router.router, prefix="/api", tags=["Model Endpoints"])
+app.include_router(document_router.router, prefix="/api", tags=["Document Endpoints"])
+app.include_router(upload_router.router, prefix="/api", tags=["Upload Endpoints"])
+app.include_router(automate_router.router, prefix="/api", tags=["Automation Endpoints"])
+
 
 # --- Main execution (for running with uvicorn directly) ---
 if __name__ == "__main__":
@@ -62,7 +65,7 @@ if __name__ == "__main__":
     # reload_flag = os.getenv("RELOAD", "true").lower() == "true" # Keep original logic commented if needed
 
     # --- Disable reload explicitly ---
-    reload_flag = False
+    reload_flag = False # As per your original code
     logger.info(f"Starting Uvicorn server directly from main.py on {host}:{port} (Reload: {reload_flag})...")
     uvicorn.run(
         "main:app",
@@ -71,4 +74,3 @@ if __name__ == "__main__":
         reload=reload_flag, # Explicitly set to False
         log_level="info"
     )
-

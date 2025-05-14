@@ -1,5 +1,6 @@
 // HIA/frontend/src/components/Sidebar.jsx
 import React, { useState, useRef, useEffect } from 'react';
+import PropTypes from 'prop-types'; // Import PropTypes
 import styles from './Sidebar.module.css'; // Import CSS Module
 
 // Helper function (keep local or move to utils)
@@ -11,12 +12,12 @@ const formatSessionIdFallback = (sessionId) => {
 export function Sidebar({
     sessions,
     activeSessionId,
-    selectedModel,
+    selectedModel, // This prop is crucial for automation
     onNewChat,
     onSelectSession,
     onDeleteSession,
     onRenameSession,
-    onAutomateConversation,
+    onAutomateConversation, // This is handleAutomateConversation from useChatApi
     isSubmitting, // General submission state for automation/chat
     automationError,
     isInitialized, // Receive initialization status
@@ -73,8 +74,21 @@ export function Sidebar({
   }, [editingSessionId]);
 
   const handleAutomationSubmit = () => {
-      if (!selectedModel) { alert("Please select a model first."); return; }
-      if (onAutomateConversation) onAutomateConversation(automationJson, selectedModel);
+      if (!selectedModel) { 
+          alert("Please select a model first (usually selected in the ChatInterface or App level and passed to Sidebar)."); 
+          return; 
+      }
+      if (!activeSessionId) {
+          alert("Please select an active chat session to automate.");
+          return;
+      }
+      // Let's hardcode a task for now. You can make this dynamic later (e.g., from a dropdown).
+      const taskToPerform = "summarize_conversation"; // Or "suggest_next_reply" or null
+
+      console.log(`[Sidebar] handleAutomationSubmit called. JSON: ${automationJson}, Model: ${selectedModel}, Task: ${taskToPerform}`);
+      if (onAutomateConversation) {
+          onAutomateConversation(automationJson, selectedModel, taskToPerform);
+      }
   };
 
   const handleUploadJsonClick = () => { automationFileInputRef.current?.click(); };
@@ -108,7 +122,7 @@ export function Sidebar({
     if (file && file.type === "application/pdf") {
         setSelectedPdfFile(file);
         // Clear upload status when a new file is selected
-        if (pdfUploadStatus) onUploadPdf(null); // Pass null to clear status in App.jsx if needed
+        if (pdfUploadStatus && onUploadPdf) onUploadPdf(null, true); // Pass true to indicate clearing status
     } else {
         setSelectedPdfFile(null);
         if (file) alert("Please select a PDF file.");
@@ -118,7 +132,7 @@ export function Sidebar({
 
   const handlePdfUploadClick = () => {
     if (selectedPdfFile && onUploadPdf) {
-        onUploadPdf(selectedPdfFile);
+        onUploadPdf(selectedPdfFile, false); // Pass false to indicate actual upload
         // Clear selection after upload attempt
         setSelectedPdfFile(null);
         if (pdfFileInputRef.current) pdfFileInputRef.current.value = '';
@@ -130,8 +144,8 @@ export function Sidebar({
 
   return (
     <div className={styles.sidebar}>
-       {/* Top Buttons Section */}
-       <div className={styles.sidebarTopActions}>
+        {/* Top Buttons Section */}
+        <div className={styles.sidebarTopActions}>
             <button onClick={onNewChat} className={styles.newChatButton}>
                 + New Chat
             </button>
@@ -139,7 +153,7 @@ export function Sidebar({
             <button onClick={onViewDocuments} className={styles.viewDocumentsButton}>
                 View Documents
             </button>
-       </div>
+        </div>
 
       <nav className={styles.conversationMenu}>
         <h2>Conversations</h2>
@@ -163,7 +177,7 @@ export function Sidebar({
                     value={editingValue}
                     onChange={handleInputChange}
                     onKeyDown={handleInputKeyDown}
-                    onBlur={handleSaveEdit}
+                    onBlur={handleSaveEdit} // Consider changing to a save button for better UX
                     className={styles.sessionEditInput}
                     aria-label={`Rename chat ${displayName}`}
                   />
@@ -188,7 +202,7 @@ export function Sidebar({
                   </>
                 )}
                 {!isEditing && (
-                     <button
+                    <button
                         onClick={(e) => { e.stopPropagation(); onDeleteSession(sessionId); }}
                         className={styles.deleteSessionButton}
                         aria-label={`Delete ${displayName}`}
@@ -203,8 +217,8 @@ export function Sidebar({
         </ul>
       </nav>
 
-      {/* --- PDF Upload Section --- */}
-      <div className={styles.pdfUploadSection}>
+        {/* --- PDF Upload Section --- */}
+        <div className={styles.pdfUploadSection}>
         <h2>Upload Document</h2>
         <input
           type="file"
@@ -235,8 +249,8 @@ export function Sidebar({
       </div>
 
 
-      {/* --- Automation Section --- */}
-      <div className={styles.automationSection}>
+        {/* --- Automation Section --- */}
+        <div className={styles.automationSection}>
         <div className={styles.automationHeader}>
             <h2>Automate</h2>
             <input
@@ -254,7 +268,7 @@ export function Sidebar({
                 aria-label="Upload JSON file for automation"
                 disabled={isSubmitting} // General submitting state
             >
-                 ⬆️ Upload JSON
+                ⬆️ Upload JSON
             </button>
         </div>
         <label htmlFor="automation-json-input" className={styles.automationLabel}>
@@ -283,10 +297,31 @@ export function Sidebar({
         >
           {isSubmitting ? 'Running...' : 'Run Automation'}
         </button>
-         {!selectedModel && activeSessionId && isInitialized && <p className={styles.automationWarning}>Select a model above.</p>}
-         {!activeSessionId && isInitialized && <p className={styles.automationWarning}>Create or select a chat.</p>}
-      </div>
+          {!selectedModel && activeSessionId && isInitialized && <p className={styles.automationWarning}>Select a model above.</p>}
+          {!activeSessionId && isInitialized && <p className={styles.automationWarning}>Create or select a chat.</p>}
+        </div>
     </div>
   );
 }
 
+// PropTypes (optional, but good practice)
+// Add other props as needed
+Sidebar.propTypes = {
+    sessions: PropTypes.object.isRequired,
+    activeSessionId: PropTypes.string,
+    selectedModel: PropTypes.string, // Ensure this is passed from App.jsx
+    onNewChat: PropTypes.func.isRequired,
+    onSelectSession: PropTypes.func.isRequired,
+    onDeleteSession: PropTypes.func.isRequired,
+    onRenameSession: PropTypes.func.isRequired,
+    onAutomateConversation: PropTypes.func.isRequired,
+    isSubmitting: PropTypes.bool,
+    automationError: PropTypes.string,
+    isInitialized: PropTypes.bool.isRequired,
+    onUploadPdf: PropTypes.func,
+    isUploadingPdf: PropTypes.bool,
+    pdfUploadStatus: PropTypes.object,
+    onViewDocuments: PropTypes.func,
+};
+
+export default Sidebar; // If you prefer default export

@@ -6,7 +6,20 @@ from datetime import datetime
 
 logger = logging.getLogger("nlp_backend.schemas") # Logger for this module
 
-# --- Pydantic Models ---
+# --- Generic Message Model (useful for conversation histories) ---
+class Message(BaseModel):
+    role: str = Field(..., description="Role of the message sender (e.g., 'user', 'assistant', 'system')")
+    content: str = Field(..., description="Content of the message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "role": "user",
+                "content": "Hello, how are you?"
+            }
+        }
+
+# --- Pydantic Models (Existing) ---
 class OllamaModelInfo(BaseModel):
     name: str
     modified_at: str # Storing as string as per your original model
@@ -50,7 +63,8 @@ class LegacyChatRequest(BaseModel):
 class RAGChatRequest(BaseModel):
     session_id: str
     prompt: str
-    history: List[Dict[str, str]] = []
+    # Consider using List[Message] here if it fits your history structure
+    history: List[Dict[str, str]] = Field(default_factory=list, description="Conversation history as a list of role/content dicts.") 
     use_rag: bool = True
 
 class RAGChatResponse(BaseModel):
@@ -60,7 +74,8 @@ class RAGChatResponse(BaseModel):
 class RAGStreamRequest(BaseModel):
     session_id: str
     prompt: str
-    history: List[Dict[str, str]] = []
+    # Consider using List[Message] here
+    history: List[Dict[str, str]] = Field(default_factory=list, description="Conversation history for RAG stream.")
     use_rag: bool = True
 
 # Model for the response from /api/chat (streaming uses dicts, but this can be for non-streaming if needed)
@@ -71,7 +86,7 @@ class ChatResponseToken(BaseModel):
 
 class UploadResponse(BaseModel):
     message: str
-    filename: str
+    filename: str # Assuming one file per response, adjust if multiple
     chunks_added: Optional[int] = None
 
 class HealthStatusDetail(BaseModel):
@@ -83,12 +98,12 @@ class HealthResponse(BaseModel):
     ollama: HealthStatusDetail
     chromadb: HealthStatusDetail
 
-# --- Schemas for Document Chunks ---
+# --- Schemas for Document Chunks (Existing) ---
 class DocumentChunk(BaseModel):
     """Represents a single document chunk retrieved from the vector store."""
     id: str
     content: str = Field(..., alias="page_content") # Use alias if field name differs
-    metadata: Dict[str, Any] = {}
+    metadata: Dict[str, Any] = Field(default_factory=dict) # Ensure default is a factory
 
     class Config:
         # Correct Pydantic V2 config key
@@ -99,3 +114,42 @@ class DocumentListResponse(BaseModel):
     """Response model for listing all document chunks."""
     count: int
     documents: List[DocumentChunk]
+
+# --- Schemas for Automation Endpoint ---
+class AutomateRequest(BaseModel):
+    conversation_history: List[Message] = Field(..., description="The current conversation history to be automated.")
+    model: str = Field(..., description="The model to use for the automation task.")
+    automation_task: Optional[str] = Field(None, description="Specific automation task to perform (e.g., 'summarize', 'generate_next_steps').")
+    config_params: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional configuration parameters for automation.")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "conversation_history": [
+                    {"role": "user", "content": "We discussed the project timeline and deliverables."},
+                    {"role": "assistant", "content": "Okay, I've noted that. The key deliverables are X, Y, and Z due by next Friday."},
+                    {"role": "user", "content": "Correct. Also, remember to schedule the follow-up meeting."}
+                ],
+                "model": "llama3:latest", # Example model
+                "automation_task": "generate_meeting_summary_and_actions",
+                "config_params": {"max_summary_length": 200}
+            }
+        }
+
+class AutomateResponse(BaseModel):
+    status: str = Field(..., description="Status of the automation request (e.g., 'success', 'error').")
+    message: Optional[str] = Field(None, description="A message providing details about the outcome.")
+    data: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Output data from the automation process.")
+    error_details: Optional[str] = Field(None, description="Details if an error occurred.")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "success",
+                "message": "Conversation automated successfully.",
+                "data": {
+                    "summary": "The project timeline and deliverables were discussed. Key items are X, Y, Z due next Friday. A follow-up meeting needs to be scheduled.",
+                    "action_items": ["Schedule follow-up meeting."]
+                }
+            }
+        }

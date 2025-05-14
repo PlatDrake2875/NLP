@@ -1,4 +1,4 @@
-# version: '3.8' # Removed obsolete version tag
+# version: '3.8' # Removed by user, keeping it removed.
 
 services:
   frontend:
@@ -7,10 +7,10 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - /app/node_modules # Cache node_modules
     environment:
-      - VITE_API_BASE_URL=http://backend:8000
-      - CHOKIDAR_USEPOLLING=true
+      - VITE_API_BASE_URL=http://backend:8000 # Frontend (in Docker) to Backend (in Docker)
+      - CHOKIDAR_USEPOLLING=true # For hot reloading in some environments
     depends_on:
       - backend
     networks:
@@ -19,44 +19,56 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8000:8000" # Expose backend to host
     volumes:
-      - ./backend:/app
+      - ./backend:/app # Mount backend code
     environment:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # User's existing environment variables:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434 # For backend to directly access Ollama on host
       - CHROMA_HOST=chromadb
-      - CHROMA_PORT=8000
+      - CHROMA_PORT=8000 # ChromaDB's internal port
       - EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
       - OLLAMA_MODEL=llama3
+      # Added for NeMo Guardrails:
+      - NEMO_GUARDRAILS_SERVER_URL=http://nemo-guardrails:8001 # Backend to Guardrails service
     depends_on:
       - chromadb
+      - nemo-guardrails # Ensure guardrails starts before backend
     networks:
       - app-network
-    # Add extra_hosts if host.docker.internal doesn't work on Linux
+    # Add extra_hosts if host.docker.internal doesn't work on your Linux distribution
+    # for the backend to reach host Ollama (if it needs to directly).
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
 
+
+  nemo-guardrails:
+    build: ./nemo_guardrails_build
+    volumes:
+      - ./guardrails_config:/app/config/guardrails_config 
+    command: >-
+      nemoguardrails server
+        --config /app/config             
+        --default-config-id guardrails_config
+        --port 8001
+    ports:
+      - "8002:8001"
+    networks: [app-network]
+
+
   chromadb:
-    # Pin ChromaDB server to version 0.5.5
-    image: chromadb/chroma:0.5.20
+    image: chromadb/chroma:0.5.20 # User-specified version
     ports:
       - "8001:8000" # Host port 8001 maps to container port 8000
     volumes:
       - chromadb_data:/chroma/chroma # Persist ChromaDB data
     networks:
       - app-network
-    # ChromaDB 0.5.x server mode should be default.
-    # Explicit command can be added if server doesn't start correctly:
-    # command: "uvicorn chromadb.app:app --host 0.0.0.0 --port 8000 --workers 1 --reload"
-    # Environment variables for server configuration (optional, defaults are usually fine)
     # environment:
-    #   - CHROMA_SERVER_HOST=0.0.0.0
-    #   - CHROMA_SERVER_HTTP_PORT=8000
-    #   - CHROMA_PERSIST_PATH=/chroma/chroma
-    #   - ANONYMIZED_TELEMETRY=FALSE # If you want to disable telemetry
+    #   - ANONYMIZED_TELEMETRY=FALSE
 
 volumes:
-  chromadb_data:
+  chromadb_data: # Persists ChromaDB data
 
 networks:
   app-network:

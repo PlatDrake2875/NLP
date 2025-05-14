@@ -3,17 +3,17 @@ import logging
 from typing import List, Dict, Optional, Any
 
 import chromadb
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends # Ensure Depends is imported if used directly here, though typically in routers
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
 from langchain_chroma import Chroma as LangchainChroma
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate # Removed MessagesPlaceholder as it wasn't used directly
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import (
     RunnablePassthrough, RunnableParallel, Runnable,
-    RunnableLambda, RunnableBranch, RunnableConfig
+    RunnableLambda # Removed RunnableBranch, RunnableConfig as they are not used in the provided active code
 )
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage # Removed SystemMessage as it wasn't used
 from langchain_core.documents import Document
 
 # Import configurations from config.py
@@ -21,45 +21,46 @@ try:
     from config import (
         CHROMA_HOST, CHROMA_PORT, EMBEDDING_MODEL_NAME, COLLECTION_NAME,
         OLLAMA_BASE_URL, OLLAMA_MODEL_FOR_RAG,
-        # --- Import RAG_ENABLED from config ---
-        RAG_ENABLED,
+        RAG_ENABLED, # Imported from config
         RAG_PROMPT_TEMPLATE_STR, SIMPLE_PROMPT_TEMPLATE_STR,
         RAG_CONTEXT_PREFIX_TEMPLATE_STR,
-        logger
+        logger,
+        # Attempt to import the new config for automation LLM
+        OLLAMA_MODEL_FOR_AUTOMATION
     )
-except ImportError as e:
-    logger.critical(f"Failed to import from config: {e}. Ensure config.py exists and PYTHONPATH is correct.")
-    raise
+except ImportError:
+    # Fallback if OLLAMA_MODEL_FOR_AUTOMATION is not in config.py
+    logger.warning("OLLAMA_MODEL_FOR_AUTOMATION not found in config.py, defaulting to OLLAMA_MODEL_FOR_RAG or 'llama3'")
+    OLLAMA_MODEL_FOR_AUTOMATION = OLLAMA_MODEL_FOR_RAG if 'OLLAMA_MODEL_FOR_RAG' in globals() else "llama3"
 
-# --- Remove RAG_ENABLED definition from here ---
-# RAG_ENABLED = True # Example: Set to True to enable RAG features
 
 # --- Globals for RAG Components ---
 chroma_client: Optional[chromadb.HttpClient] = None
 embedding_function: Optional[HuggingFaceEmbeddings] = None
 vectorstore: Optional[LangchainChroma] = None
-retriever: Optional[Any] = None # Can be BaseRetriever or similar
+retriever: Optional[Any] = None
 ollama_chat_for_rag: Optional[ChatOllama] = None
+ollama_chat_for_automation: Optional[ChatOllama] = None # New global for automation LLM
 rag_prompt_template_obj: Optional[ChatPromptTemplate] = None
 simple_prompt_template_obj: Optional[ChatPromptTemplate] = None
 rag_context_prefix_prompt_template_obj: Optional[ChatPromptTemplate] = None
 
-# --- Helper Functions ---
+# --- Helper Functions (format_history_for_lc, format_docs remain the same) ---
 def format_history_for_lc(history: List[Dict[str, str]]) -> List:
     """Converts custom history format to LangChain Message objects."""
     lc_messages = []
     for msg in history:
         role = msg.get("sender", "user")
         content = msg.get("text", "")
-        if not isinstance(content, str): content = str(content) # Ensure content is string
+        if not isinstance(content, str): content = str(content)
 
         if role.lower() == "user":
             lc_messages.append(HumanMessage(content=content))
         elif role.lower() == "bot":
             lc_messages.append(AIMessage(content=content))
-        else: # Default to human if role is unclear
-             logger.warning(f"Unknown role '{role}' in history, treating as HumanMessage.")
-             lc_messages.append(HumanMessage(content=content))
+        else:
+            logger.warning(f"Unknown role '{role}' in history, treating as HumanMessage.")
+            lc_messages.append(HumanMessage(content=content))
     return lc_messages
 
 def format_docs(docs: List[Document]) -> str:
@@ -72,20 +73,21 @@ def format_docs(docs: List[Document]) -> str:
 def setup_rag_components():
     """Initializes all RAG components and stores them in globals."""
     global chroma_client, embedding_function, vectorstore, retriever, \
-           ollama_chat_for_rag, rag_prompt_template_obj, simple_prompt_template_obj, \
-           rag_context_prefix_prompt_template_obj # Add new global
+           ollama_chat_for_rag, ollama_chat_for_automation, \
+           rag_prompt_template_obj, simple_prompt_template_obj, \
+           rag_context_prefix_prompt_template_obj
 
     logger.info("Setting up RAG components...")
 
-    # 1. Embedding Function
+    # 1. Embedding Function (same as before)
     try:
         embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
         logger.info(f"HuggingFace embeddings initialized with model: {EMBEDDING_MODEL_NAME}")
     except Exception as e:
         logger.error(f"Failed to initialize HuggingFace embeddings: {e}", exc_info=True)
-        embedding_function = None # Ensure it's None on failure
+        embedding_function = None
 
-    # 2. ChromaDB Client and Vectorstore (only if embeddings succeeded)
+    # 2. ChromaDB Client and Vectorstore (same as before)
     if embedding_function:
         try:
             logger.info(f"Attempting to connect to ChromaDB at {CHROMA_HOST}:{CHROMA_PORT}")
@@ -100,31 +102,24 @@ def setup_rag_components():
                 embedding_function=embedding_function,
             )
             logger.info(f"LangChain Chroma vector store initialized for collection: {COLLECTION_NAME}")
-
-            # 3. Retriever (only if vectorstore succeeded)
             retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
             logger.info("Retriever initialized successfully (k=3).")
 
         except Exception as e:
             logger.critical(f"Failed to initialize ChromaDB client/vectorstore/retriever: {e}", exc_info=True)
-            chroma_client = None
-            vectorstore = None
-            retriever = None
+            chroma_client = vectorstore = retriever = None
     else:
-         logger.warning("Skipping ChromaDB/Vectorstore/Retriever setup because embedding function failed.")
-         chroma_client = None
-         vectorstore = None
-         retriever = None
+        logger.warning("Skipping ChromaDB/Vectorstore/Retriever setup because embedding function failed.")
+        chroma_client = vectorstore = retriever = None
 
-
-    # 4. ChatOllama LLM (for RAG)
+    # 3. ChatOllama LLM (for RAG) (same as before)
     if OLLAMA_BASE_URL:
         try:
             logger.info(f"Initializing ChatOllama (for RAG) with model: {OLLAMA_MODEL_FOR_RAG} at {OLLAMA_BASE_URL}")
             ollama_chat_for_rag = ChatOllama(
                 model=OLLAMA_MODEL_FOR_RAG,
                 base_url=OLLAMA_BASE_URL,
-                temperature=0.1
+                temperature=0.1 # Example temperature
             )
             logger.info("ChatOllama (for RAG) initialized.")
         except Exception as e:
@@ -134,7 +129,25 @@ def setup_rag_components():
         logger.warning("OLLAMA_BASE_URL not set. ChatOllama for RAG cannot be initialized.")
         ollama_chat_for_rag = None
 
-    # 5. Prompt Templates
+    # 4. ChatOllama LLM (for Automation Tasks) - NEW
+    if OLLAMA_BASE_URL:
+        try:
+            logger.info(f"Initializing ChatOllama (for Automation) with model: {OLLAMA_MODEL_FOR_AUTOMATION} at {OLLAMA_BASE_URL}")
+            ollama_chat_for_automation = ChatOllama(
+                model=OLLAMA_MODEL_FOR_AUTOMATION,
+                base_url=OLLAMA_BASE_URL,
+                temperature=0.2 # Example: Potentially different temperature for automation
+                # You can add other parameters like num_predict, top_k, top_p if needed
+            )
+            logger.info(f"ChatOllama (for Automation) initialized with model {OLLAMA_MODEL_FOR_AUTOMATION}.")
+        except Exception as e:
+            logger.error(f"Failed to initialize ChatOllama for Automation: {e}", exc_info=True)
+            ollama_chat_for_automation = None
+    else:
+        logger.warning("OLLAMA_BASE_URL not set. ChatOllama for Automation cannot be initialized.")
+        ollama_chat_for_automation = None
+
+    # 5. Prompt Templates (same as before)
     logger.info("Initializing prompt templates.")
     try:
         rag_prompt_template_obj = ChatPromptTemplate.from_template(RAG_PROMPT_TEMPLATE_STR)
@@ -142,7 +155,7 @@ def setup_rag_components():
     except Exception as e:
         logger.error(f"Failed to create RAG prompt template: {e}", exc_info=True)
         rag_prompt_template_obj = None
-
+    # ... (simple_prompt_template_obj and rag_context_prefix_prompt_template_obj initialization) ...
     try:
         simple_prompt_template_obj = ChatPromptTemplate.from_template(SIMPLE_PROMPT_TEMPLATE_STR)
         logger.info("Simple prompt template initialized.")
@@ -160,36 +173,48 @@ def setup_rag_components():
     logger.info("RAG components setup finished.")
 
 
-# --- Dependency Functions ---
+# --- Dependency Functions (getters for initialized components) ---
+# (get_chroma_client, get_vectorstore, get_embedding_function, get_retriever, get_ollama_chat_for_rag remain the same)
 def get_chroma_client() -> chromadb.HttpClient:
     if chroma_client is None:
         logger.error("Global ChromaDB client is None. Setup might have failed or is incomplete.")
-        raise HTTPException(status_code=503, detail="ChromaDB client is not available. Service might be starting up or setup failed.")
+        raise HTTPException(status_code=503, detail="ChromaDB client is not available.")
     return chroma_client
 
 def get_vectorstore() -> LangchainChroma:
     if vectorstore is None:
         logger.error("Global Vectorstore is None. Setup might have failed or is incomplete.")
-        raise HTTPException(status_code=503, detail="Vector store is not available. Service might be starting up or setup failed.")
+        raise HTTPException(status_code=503, detail="Vector store is not available.")
     return vectorstore
 
 def get_embedding_function() -> HuggingFaceEmbeddings:
-     if embedding_function is None:
+    if embedding_function is None:
         logger.error("Global Embedding function is None. Setup might have failed.")
         raise HTTPException(status_code=503, detail="Embedding function is not available.")
-     return embedding_function
+    return embedding_function
 
-def get_retriever() -> Any: # Return type depends on as_retriever()
+def get_retriever() -> Any:
     if retriever is None:
         logger.error("Global Retriever is None. Setup might have failed or is incomplete.")
-        raise HTTPException(status_code=503, detail="Retriever is not available. Service might be starting up or setup failed.")
+        raise HTTPException(status_code=503, detail="Retriever is not available.")
     return retriever
 
 def get_ollama_chat_for_rag() -> ChatOllama:
     if ollama_chat_for_rag is None:
-        logger.error("Global ChatOllama (for RAG) is None. Setup might have failed or OLLAMA_BASE_URL is not set.")
+        logger.error("Global ChatOllama (for RAG) is None. Setup failed or OLLAMA_BASE_URL is not set.")
         raise HTTPException(status_code=503, detail="RAG chat model is not available.")
     return ollama_chat_for_rag
+
+# --- Function that was missing ---
+def get_llm_for_automation() -> ChatOllama:
+    """
+    Returns the initialized ChatOllama instance intended for automation tasks.
+    This function is the one your automate_router.py is trying to import.
+    """
+    if ollama_chat_for_automation is None:
+        logger.error("Global ChatOllama (for Automation) is None. Setup failed, OLLAMA_BASE_URL is not set, or OLLAMA_MODEL_FOR_AUTOMATION is problematic.")
+        raise HTTPException(status_code=503, detail="Automation LLM is not available.")
+    return ollama_chat_for_automation
 
 # --- Optional Dependencies (for health check) ---
 def get_optional_chroma_client() -> Optional[chromadb.HttpClient]:
@@ -198,18 +223,18 @@ def get_optional_chroma_client() -> Optional[chromadb.HttpClient]:
 def get_optional_ollama_chat_for_rag() -> Optional[ChatOllama]:
     return ollama_chat_for_rag
 
-# --- Function to Generate RAG Context Prefix ---
+def get_optional_llm_for_automation() -> Optional[ChatOllama]: # New optional getter
+    return ollama_chat_for_automation
+
+
+# --- Function to Generate RAG Context Prefix (same as before) ---
 async def get_rag_context_prefix(query: str) -> Optional[str]:
-    """
-    Retrieves context and formats it with the query using the prefix template.
-    Returns the formatted prompt string or None if RAG is disabled/unavailable/finds no docs.
-    """
-    if not RAG_ENABLED: # Check the imported flag from config
+    if not RAG_ENABLED:
         logger.info("RAG is disabled globally. Skipping context prefix generation.")
         return None
     if not retriever or not rag_context_prefix_prompt_template_obj:
         logger.warning("Retriever or RAG context prefix prompt template not initialized. Cannot generate prefix.")
-        return None # Indicate components are missing
+        return None
 
     try:
         logger.info(f"Invoking retriever for RAG context prefix with query: '{query[:50]}...'")
@@ -222,154 +247,19 @@ async def get_rag_context_prefix(query: str) -> Optional[str]:
         formatted_context = format_docs(retrieved_docs)
         logger.debug(f"Formatted context for prefix:\n{formatted_context}")
 
-        formatted_prompt = rag_context_prefix_prompt_template_obj.format(
-            context=formatted_context,
-            question=query
-        )
-        logger.info(f"Generated RAG context prefix string (length: {len(formatted_prompt)}).")
-        return formatted_prompt # Return the complete string ready for the LLM
+        # Ensure the template object is not None before calling format
+        if rag_context_prefix_prompt_template_obj:
+            formatted_prompt = rag_context_prefix_prompt_template_obj.format(
+                context=formatted_context,
+                question=query
+            )
+            logger.info(f"Generated RAG context prefix string (length: {len(formatted_prompt)}).")
+            return formatted_prompt
+        else:
+            logger.error("rag_context_prefix_prompt_template_obj is None. Cannot format prompt.")
+            return None
 
     except Exception as e:
         logger.error(f"Error generating RAG context prefix: {e}", exc_info=True)
-        return None # Indicate failure
-
-# --- Original Chain Builders (Commented Out as Requested) ---
-# def _select_llm(specific_ollama_model_name: Optional[str] = None) -> ChatOllama:
-#     """Selects the LLM instance based on request or default RAG model."""
-#     model_name = specific_ollama_model_name or OLLAMA_MODEL_FOR_RAG
-#     logger.info(f"Selecting LLM: {model_name} at {OLLAMA_BASE_URL}")
-#     # Assuming ollama_chat_for_rag is initialized with the default RAG model
-#     # If a different model is requested, create a new instance
-#     if specific_ollama_model_name and specific_ollama_model_name != OLLAMA_MODEL_FOR_RAG:
-#         try:
-#             return ChatOllama(model=model_name, base_url=OLLAMA_BASE_URL, temperature=0.1)
-#         except Exception as e:
-#             logger.error(f"Failed to create ChatOllama instance for {model_name}: {e}. Falling back to default RAG model.")
-#             # Fallback to the globally initialized RAG LLM
-#             if ollama_chat_for_rag:
-#                 return ollama_chat_for_rag
-#             else:
-#                 logger.critical("Default RAG LLM is also not available.")
-#                 raise HTTPException(status_code=503, detail="Chat model not available.")
-#     elif ollama_chat_for_rag:
-#         return ollama_chat_for_rag # Return the pre-initialized default RAG LLM
-#     else:
-#         logger.critical("Default RAG LLM was not initialized during setup.")
-#         raise HTTPException(status_code=503, detail="Default chat model not available.")
-
-# def _build_simple_chain(llm: ChatOllama) -> Runnable:
-#     """Builds the simple chain (no RAG)."""
-#     logger.info("Building simple chain.")
-#     if not simple_prompt_template_obj:
-#         logger.error("Simple prompt template object is None. Cannot build simple chain.")
-#         raise ValueError("Simple prompt template not initialized.") # Raise internal error
-
-#     return (
-#         RunnablePassthrough.assign(
-#             chat_history=RunnableLambda(lambda x: format_history_for_lc(x["chat_history"]))
-#         )
-#         | simple_prompt_template_obj
-#         | llm
-#         | StrOutputParser()
-#     )
-
-# def _build_rag_chain_with_fallback(llm: ChatOllama) -> Runnable:
-#     """Builds the RAG chain with fallback to simple chain if context retrieval fails."""
-#     logger.info("Building RAG chain with fallback.")
-#     if not retriever or not rag_prompt_template_obj or not simple_prompt_template_obj:
-#         logger.error("One or more components (retriever, RAG prompt, Simple prompt) are None. Cannot build RAG chain.")
-#         raise ValueError("RAG components not fully initialized.") # Raise internal error
-
-#     # Define the RAG part of the chain
-#     rag_chain_part = (
-#         RunnableParallel(
-#             {"context": retriever | format_docs, "question": RunnablePassthrough()}
-#         )
-#         | rag_prompt_template_obj
-#         | llm
-#         | StrOutputParser()
-#     )
-
-#     # Define the simple part (used as fallback)
-#     # Note: This assumes the input structure for simple chain is just the question
-#     simple_chain_part = simple_prompt_template_obj | llm | StrOutputParser()
-
-#     # Use RunnableBranch to decide the path
-#     # Input to the branch is expected to be a dict with 'question' and 'chat_history'
-#     # We need to adapt this slightly if the input structure differs
-#     def route(info):
-#         # This routing logic might need adjustment based on how context is handled
-#         # For now, let's assume context is attempted first
-#         # A more robust check might involve trying retrieval and seeing if it fails/returns empty
-#         logger.debug(f"Routing decision based on input: {info}") # Add debug log
-#         # If context is present and not the "No relevant context" message, use RAG
-#         if info.get("context") and info["context"] != "No relevant context found.":
-#              logger.info("Routing to RAG chain part.")
-#              return rag_chain_part
-#         else:
-#              logger.info("Routing to simple chain part (fallback).")
-#              return simple_chain_part
-
-#     # The initial part retrieves context and prepares for branching
-#     # Input expected: {"question": str, "chat_history": list}
-#     full_rag_chain = RunnablePassthrough.assign(
-#         context=lambda x: retriever.ainvoke(x["question"]) if retriever else [], # Attempt retrieval
-#         chat_history_formatted=lambda x: format_history_for_lc(x["chat_history"]) # Format history
-#     ).assign(
-#         formatted_context=lambda x: format_docs(x["context"]) # Format the retrieved docs
-#     ) | RunnableLambda(route) # Route based on formatted_context (needs adjustment)
-
-#     # --- Potential Issue & Alternative Branching ---
-#     # The above RunnableLambda(route) might not work as expected because the input
-#     # to the lambda might not be the dictionary containing 'formatted_context'.
-#     # A more standard LangChain approach for fallback:
-#     # full_rag_chain = RunnableParallel(
-#     #     {"context": retriever | format_docs, "question": RunnablePassthrough(), "chat_history": RunnablePassthrough()}
-#     # ) | RunnablePassthrough.assign( # Pass history through
-#     #      chat_history=lambda x: format_history_for_lc(x['chat_history']['chat_history']) # Adjust access if needed
-#     # ) | RunnableBranch(
-#     #      (lambda x: x["context"] != "No relevant context found.", rag_prompt_template_obj | llm | StrOutputParser()), # RAG path
-#     #      simple_prompt_template_obj | llm | StrOutputParser() # Fallback path
-#     # )
-#     # logger.info("Using RunnableBranch for RAG fallback logic.")
-#     # This alternative needs careful testing of the input structure at each step.
-#     # For now, sticking with the simpler (potentially flawed) lambda routing for demonstration.
-
-#     logger.info("Built RAG chain with fallback.")
-#     return full_rag_chain
-
-
-# def get_rag_or_simple_chain(use_rag_flag: bool, specific_ollama_model_name: Optional[str] = None) -> Runnable:
-#     """
-#     Selects and returns the appropriate chain (RAG with fallback or Simple)
-#     based on the RAG_ENABLED flag and use_rag_flag.
-#     """
-#     active_llm = _select_llm(specific_ollama_model_name)
-
-#     if RAG_ENABLED and use_rag_flag:
-#         logger.info("Attempting to build and return RAG chain with fallback.")
-#         if retriever and rag_prompt_template_obj and simple_prompt_template_obj:
-#              # This is where the complex RAG chain with fallback is built
-#              # For simplicity in this example, let's just return the RAG part
-#              # A proper implementation needs the fallback logic from _build_rag_chain_with_fallback
-#              rag_chain = (
-#                  RunnableParallel(
-#                      {"context": retriever | format_docs, "question": RunnablePassthrough()}
-#                  )
-#                  | rag_prompt_template_obj
-#                  | active_llm
-#                  | StrOutputParser()
-#              )
-#              logger.info("Returning RAG chain (fallback logic needs review).")
-#              return rag_chain # Simplified return for now
-#              # return _build_rag_chain_with_fallback(active_llm) # Use this when logic is confirmed
-#         else:
-#             logger.warning("RAG enabled, but core components missing. Falling back to simple chain.")
-#             return _build_simple_chain(active_llm)
-#     else:
-#         if not RAG_ENABLED:
-#              logger.info("RAG_ENABLED is False. Building simple chain.")
-#         else: # RAG is enabled globally, but disabled for this request
-#              logger.info(f"RAG disabled for this request (use_rag_flag={use_rag_flag}). Building simple chain.")
-#         return _build_simple_chain(active_llm)
+        return None
 
