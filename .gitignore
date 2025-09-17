@@ -321,6 +321,6 @@ secrets.yml
 .history/
 
 # === Lock files (optional - comment out if you want to track them) ===
-# package-lock.json
-# uv.lock
-# poetry.lock
+package-lock.json
+uv.lock
+poetry.lock
