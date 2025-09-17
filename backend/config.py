@@ -1,13 +1,16 @@
 # backend/config.py
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 # --- Logging Setup ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("nlp_backend")
 logger.setLevel(os.getenv("LOG_LEVEL", "INFO").upper())
 
@@ -16,13 +19,21 @@ CHROMA_HOST = os.getenv("CHROMA_HOST", "chromadb")
 CHROMA_PORT = os.getenv("CHROMA_PORT", "8000")
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "rag_documents")
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434") # Use host.docker.internal for Ollama running on host
-OLLAMA_MODEL_FOR_RAG = os.getenv("OLLAMA_MODEL_FOR_RAG", "llama3") # Default model for RAG if not specified in request
+OLLAMA_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL", "http://host.docker.internal:11434"
+)  # Use host.docker.internal for Ollama running on host
+OLLAMA_MODEL_FOR_RAG = os.getenv(
+    "OLLAMA_MODEL_FOR_RAG", "llama3"
+)  # Default model for RAG if not specified in request
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "temp_uploads")
-NEMO_GUARDRAILS_SERVER_URL = os.getenv("NEMO_GUARDRAILS_SERVER_URL", "http://nemo-guardrails:8001")
+NEMO_GUARDRAILS_SERVER_URL = os.getenv(
+    "NEMO_GUARDRAILS_SERVER_URL", "http://nemo-guardrails:8001"
+)
 USE_GUARDRAILS = os.getenv("USE_GUARDRAILS", "true").lower() == "true"
-os.makedirs(UPLOAD_DIR, exist_ok=True) # Ensure upload directory exists
-OLLAMA_MODEL_FOR_AUTOMATION = os.getenv("OLLAMA_MODEL_FOR_AUTOMATION", "llama3") # Or another default
+os.makedirs(UPLOAD_DIR, exist_ok=True)  # Ensure upload directory exists
+OLLAMA_MODEL_FOR_AUTOMATION = os.getenv(
+    "OLLAMA_MODEL_FOR_AUTOMATION", "llama3"
+)  # Or another default
 
 # --- RAG Configuration ---
 # Global flag to enable/disable RAG functionality
@@ -57,7 +68,7 @@ SIMPLE_PROMPT_TEMPLATE_STR = """SYSTEM: You are a helpful AI assistant. Answer t
 USER: {question}"""
 
 # Log key configurations on startup
-logger.info(f"Configuration loaded:")
+logger.info("Configuration loaded:")
 logger.info(f"  CHROMA_HOST: {CHROMA_HOST}")
 logger.info(f"  CHROMA_PORT: {CHROMA_PORT}")
 logger.info(f"  EMBEDDING_MODEL_NAME: {EMBEDDING_MODEL_NAME}")
@@ -66,4 +77,3 @@ logger.info(f"  OLLAMA_BASE_URL: {OLLAMA_BASE_URL}")
 logger.info(f"  OLLAMA_MODEL_FOR_RAG: {OLLAMA_MODEL_FOR_RAG}")
 logger.info(f"  RAG_ENABLED: {RAG_ENABLED}")
 logger.info(f"  UPLOAD_DIR: {UPLOAD_DIR}")
-
