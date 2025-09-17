@@ -1,37 +1,22 @@
-# Super Minimal config.yml for debugging - Attempt 2
+# Ultra-minimal config.yml for NeMo Guardrails
 models:
   - type: main
     engine: ollama
-    model: gemma3:latest # Make sure this model is available in your Ollama instance
+    model: gemma3:4b-it-q4_K_M
     parameters:
-      base_url: http://host.docker.internal:11434 # This must be correct for Guardrails to reach Ollama
+      base_url: http://host.docker.internal:11434
 
-# Explicitly define common top-level configuration sections as empty dictionaries or lists
-# as appropriate for their typical structure, to avoid problematic defaults.
-config: {} # For general config options, usually a dictionary
+# Ensure all expected sections are dictionaries, not lists
+instructions: []
+user_messages: {}
+bot_messages: {}
+flows: []
+actions: []
+prompts: []
 
-instructions: [] # Usually a list of instruction sets
-
-prompts: [] # Usually a list of prompt definitions or tasks
-
-dialog_examples: [] # Usually a list of dialog examples
-
-colang_files: [] # Usually a list of .co files to include
-
-actions_server_url: null # Set to null or comment out if not used
-
-user_messages: {} # Expected to be a dictionary of canonical user messages
-bot_messages: {} # Expected to be a dictionary of canonical bot messages
-flows: [] # Usually a list of flow definitions (dictionaries)
-
-rails: # Rails configuration itself
-  dialog: {} # Sub-sections also defined, even if empty
+# Basic rails - completely empty to avoid any conflicts
+rails:
   input:
     flows: []
   output:
     flows: []
-  retrieval: {}
-  config_info: {}
-
-logging:
-  level: DEBUG # Keep logging verbose for debugging

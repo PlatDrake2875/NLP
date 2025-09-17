@@ -32,10 +32,12 @@ services:
       # Corrected for NeMo Guardrails:
       # Backend will connect to nemo-guardrails service on its internal port 8001, using the full API path.
       - NEMO_GUARDRAILS_SERVER_URL=http://nemo-guardrails:8001
+      # Temporarily disable guardrails to bypass configuration issues
+      - USE_GUARDRAILS=false
       # Consider adding LOG_LEVEL=INFO and GUARDRAILS_ENABLED=True if needed from previous versions
     depends_on:
       - chromadb
-      - nemo-guardrails # Ensure guardrails starts before backend
+      # - nemo-guardrails # Temporarily disabled
     networks:
       - app-network
     # Add extra_hosts if host.docker.internal doesn't work on your Linux distribution
