@@ -15,13 +15,13 @@ logger = logging.getLogger("nlp_backend")
 logger.setLevel(os.getenv("LOG_LEVEL", "INFO").upper())
 
 # --- Environment Variables ---
-CHROMA_HOST = os.getenv("CHROMA_HOST", "chromadb")
-CHROMA_PORT = os.getenv("CHROMA_PORT", "8000")
+CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+CHROMA_PORT = os.getenv("CHROMA_PORT", "8001")
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "rag_documents")
 OLLAMA_BASE_URL = os.getenv(
-    "OLLAMA_BASE_URL", "http://host.docker.internal:11434"
-)  # Use host.docker.internal for Ollama running on host
+    "OLLAMA_BASE_URL", "http://localhost:11434"
+)  # Use localhost for Ollama running locally
 OLLAMA_MODEL_FOR_RAG = os.getenv(
     "OLLAMA_MODEL_FOR_RAG", "llama3"
 )  # Default model for RAG if not specified in request
@@ -29,7 +29,7 @@ UPLOAD_DIR = os.getenv("UPLOAD_DIR", "temp_uploads")
 NEMO_GUARDRAILS_SERVER_URL = os.getenv(
     "NEMO_GUARDRAILS_SERVER_URL", "http://nemo-guardrails:8001"
 )
-USE_GUARDRAILS = os.getenv("USE_GUARDRAILS", "true").lower() == "true"
+USE_GUARDRAILS = os.getenv("USE_GUARDRAILS", "false").lower() == "true"
 os.makedirs(UPLOAD_DIR, exist_ok=True)  # Ensure upload directory exists
 OLLAMA_MODEL_FOR_AUTOMATION = os.getenv(
     "OLLAMA_MODEL_FOR_AUTOMATION", "llama3"

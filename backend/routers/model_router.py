@@ -151,12 +151,12 @@ async def list_ollama_models_endpoint():
                 "detail": f"Ollama API error: {getattr(e, 'error', 'Failed to communicate with Ollama')}"
             },
         )
-    except ollama.OllamaError as e:
+    except ollama.RequestError as e:
         logger.error(
-            f"Ollama library error occurred in /api/models: {e}", exc_info=True
+            f"Ollama request error occurred in /api/models: {e}", exc_info=True
         )
         return JSONResponse(
-            status_code=500, content={"detail": f"Ollama library error: {str(e)}"}
+            status_code=500, content={"detail": f"Ollama request error: {str(e)}"}
         )
     except Exception as e:
         logger.error(

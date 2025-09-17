@@ -13,7 +13,6 @@ dependencies = [
     "httpx",
     "hf_xet",
     "ollama",
-    # RAG Dependencies
     "langchain",
     "langchain-community",
     "langchain-huggingface",
@@ -23,6 +22,7 @@ dependencies = [
     "sentence-transformers",
     "pypdf",
     "tiktoken",
+    "nemoguardrails==0.13.0",
 ]
 
 [project.optional-dependencies]

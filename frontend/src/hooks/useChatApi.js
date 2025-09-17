@@ -87,27 +87,46 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
           if (message.startsWith('data:')) {
             const jsonString = message.substring(5).trim();
             if (jsonString) {
-              try {
-                const parsedData = JSON.parse(jsonString);
-                if (parsedData.token) {
-                  accumulatedBotResponse += parsedData.token;
-                  setSessions(prevSessions => {
-                    if (!prevSessions[activeSessionId]) return prevSessions;
-                    const history = prevSessions[activeSessionId].history || [];
-                    const botIndex = history.findIndex(msg => msg.id === botMessageId);
-                    if (botIndex === -1) return prevSessions;
-                    const updatedMsg = { ...history[botIndex], text: accumulatedBotResponse, isLoading: true };
-                    const newHistory = [...history.slice(0, botIndex), updatedMsg, ...history.slice(botIndex + 1)];
-                    return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
-                  });
-                } else if (parsedData.status === 'done' || parsedData.done) { // Handle 'done' from backend
-                  console.log(`API Hook: [${activeSessionId} - ${reqId}] Received 'done' status via SSE.`);
-                } else if (parsedData.error) {
-                  console.error(`API Hook: [${activeSessionId} - ${reqId}] Error received via SSE:`, parsedData.error);
-                  throw new Error(`Stream error: ${parsedData.error}`);
+              // Check for [DONE] signal first
+              if (jsonString === '[DONE]') {
+                console.log(`API Hook: [${activeSessionId} - ${reqId}] Received [DONE] signal via SSE.`);
+                // Don't try to parse [DONE] as JSON, just continue
+              } else {
+                try {
+                  const parsedData = JSON.parse(jsonString);
+                  let contentToAdd = '';
+                  
+                  // Handle different response formats
+                  if (parsedData.token) {
+                    // Old format: direct token
+                    contentToAdd = parsedData.token;
+                  } else if (parsedData.choices && parsedData.choices[0] && parsedData.choices[0].delta && parsedData.choices[0].delta.content) {
+                    // OpenAI ChatCompletion format
+                    contentToAdd = parsedData.choices[0].delta.content;
+                  } else if (parsedData.status === 'done' || parsedData.done) {
+                    // Handle 'done' from backend
+                    console.log(`API Hook: [${activeSessionId} - ${reqId}] Received 'done' status via SSE.`);
+                  } else if (parsedData.error) {
+                    console.error(`API Hook: [${activeSessionId} - ${reqId}] Error received via SSE:`, parsedData.error);
+                    throw new Error(`Stream error: ${parsedData.error}`);
+                  }
+                  
+                  // If we have content to add, update the UI
+                  if (contentToAdd) {
+                    accumulatedBotResponse += contentToAdd;
+                    setSessions(prevSessions => {
+                      if (!prevSessions[activeSessionId]) return prevSessions;
+                      const history = prevSessions[activeSessionId].history || [];
+                      const botIndex = history.findIndex(msg => msg.id === botMessageId);
+                      if (botIndex === -1) return prevSessions;
+                      const updatedMsg = { ...history[botIndex], text: accumulatedBotResponse, isLoading: true };
+                      const newHistory = [...history.slice(0, botIndex), updatedMsg, ...history.slice(botIndex + 1)];
+                      return { ...prevSessions, [activeSessionId]: { ...prevSessions[activeSessionId], history: newHistory } };
+                    });
+                  }
+                } catch (e) {
+                  console.error(`API Hook: [${activeSessionId} - ${reqId}] Error parsing JSON from SSE line:`, jsonString, e);
                 }
-              } catch (e) {
-                console.error(`API Hook: [${activeSessionId} - ${reqId}] Error parsing JSON from SSE line:`, jsonString, e);
               }
             }
           } else if (message) {

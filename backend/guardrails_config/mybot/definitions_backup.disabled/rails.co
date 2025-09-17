@@ -1,0 +1,32 @@
+# NLP/guardrails_config/rails.co
+
+# Basic input self-check
+define flow self check input
+  # This predefined flow implicitly uses the "self_check_input" prompt.
+  # If the check fails (e.g., LLM using the prompt says "Yes, it's malicious"),
+  # the Guardrails engine will typically halt further processing or trigger a refusal.
+  pass
+
+define bot refuse to respond
+  "I'm sorry, I cannot respond to that."
+
+# Basic output self-check
+define flow self check output
+  # This predefined flow implicitly uses the "self_check_output" prompt.
+  pass
+
+# Custom rail to enforce aviation expert persona
+define user asks non_aviation_question
+  $intent = execute classify_user_intent_for_aviation(user_input=$user_message)
+  if $intent == "non-aviation"
+    result = true
+  else
+    result = false
+
+define flow check aviation topic
+  user asks non_aviation_question
+  bot inform non_aviation_topic
+  stop
+
+define bot inform non_aviation_topic
+  "I am an aviation expert and can only answer aviation-related questions. How can I help you with an aviation topic?"

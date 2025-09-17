@@ -38,7 +38,7 @@ except ImportError as e:
     NEMO_GUARDRAILS_SERVER_URL = os.getenv(
         "NEMO_GUARDRAILS_SERVER_URL", "http://nemo-guardrails:8001"
     )
-    USE_GUARDRAILS = os.getenv("USE_GUARDRAILS", "true").lower() == "true"
+    USE_GUARDRAILS = os.getenv("USE_GUARDRAILS", "false").lower() == "true"
 
 try:
     from rag_components import get_llm_for_automation, get_rag_context_prefix
@@ -62,6 +62,17 @@ except ImportError as e:
             "CRITICAL DUMMY: get_llm_for_automation is not available due to import error."
         )
         return None
+
+
+# Import local NeMo Guardrails integration
+try:
+    from nemo_guardrails_local import get_local_nemo_instance
+
+    logger.info("Successfully imported local NeMo Guardrails integration.")
+    LOCAL_NEMO_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Local NeMo Guardrails not available: {e}")
+    LOCAL_NEMO_AVAILABLE = False
 
 
 # --- Router Setup ---
@@ -151,6 +162,99 @@ async def _direct_ollama_stream(
         yield f"data: {json.dumps({'error': f'Server error during direct Ollama call: {str(e_direct)}'})}\n\n"
     finally:
         logger.info(f"[{stream_id}] EXITING _direct_ollama_stream.")
+
+
+async def _local_nemo_guardrails_stream(
+    messages_for_llm: list[dict], stream_id: str, model_name: str
+) -> AsyncGenerator[str, None]:
+    """
+    Stream chat completion using local NeMo Guardrails integration.
+
+    Args:
+        messages_for_llm: List of message dictionaries
+        stream_id: Stream identifier for logging
+        model_name: Model name to use
+
+    Yields:
+        str: SSE formatted chunks
+    """
+    logger.info(f"[{stream_id}] ENTERING _local_nemo_guardrails_stream with local integration.")
+
+    try:
+        if not LOCAL_NEMO_AVAILABLE:
+            error_msg = "Local NeMo Guardrails integration not available"
+            logger.error(f"[{stream_id}] {error_msg}")
+            yield f'data: {{"error": "{error_msg}"}}\n\n'
+            return
+
+        # Get the local NeMo instance
+        logger.info(f"[{stream_id}] Getting local NeMo Guardrails instance...")
+        nemo_instance = await get_local_nemo_instance()
+
+        if not nemo_instance.is_available():
+            error_msg = "Local NeMo Guardrails instance not properly initialized"
+            logger.error(f"[{stream_id}] {error_msg}")
+            yield f'data: {{"error": "{error_msg}"}}\n\n'
+            return
+
+        logger.info(f"[{stream_id}] Local NeMo instance ready, processing chat completion...")
+
+        # Use the local NeMo integration for chat completion
+        response = await nemo_instance.chat_completion(
+            messages=messages_for_llm,
+            model=model_name,
+            stream=False  # We'll handle streaming ourselves
+        )
+
+        if response and "choices" in response and response["choices"]:
+            content = response["choices"][0]["message"]["content"]
+            logger.info(f"[{stream_id}] Local NeMo generated response ({len(content)} chars)")
+
+            # Stream the response in SSE format
+            chunk_data = {
+                "id": response.get("id", f"local-{int(time.time())}"),
+                "object": "chat.completion.chunk",
+                "created": response.get("created", int(time.time())),
+                "model": model_name,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"content": content},
+                        "finish_reason": None
+                    }
+                ]
+            }
+            yield f"data: {json.dumps(chunk_data)}\n\n"
+
+            # Final chunk
+            final_chunk = {
+                "id": response.get("id", f"local-{int(time.time())}"),
+                "object": "chat.completion.chunk",
+                "created": response.get("created", int(time.time())),
+                "model": model_name,
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": "stop"
+                    }
+                ]
+            }
+            yield f"data: {json.dumps(final_chunk)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        else:
+            error_msg = "No valid response from local NeMo Guardrails"
+            logger.error(f"[{stream_id}] {error_msg}")
+            yield f'data: {{"error": "{error_msg}"}}\n\n'
+
+    except Exception as e:
+        error_msg = f"Local NeMo Guardrails error: {str(e)}"
+        logger.error(f"[{stream_id}] {error_msg}", exc_info=True)
+        yield f'data: {{"error": "{error_msg}"}}\n\n'
+
+    finally:
+        logger.info(f"[{stream_id}] EXITING _local_nemo_guardrails_stream.")
 
 
 async def _guardrails_ollama_stream(
@@ -455,11 +559,22 @@ async def chat_endpoint(fastapi_req: FastAPIRequest):
         logger.info(
             f"[{stream_id}] Routing to NeMo Guardrails. RAG prefix used: {rag_prefix_generated}. Final messages count: {len(messages_for_llm)}"
         )
-        generator = _guardrails_ollama_stream(
-            model_name_for_guardrails=effective_model_name,
-            messages_payload=messages_for_llm,
-            stream_id=stream_id,
-        )
+
+        # Try local NeMo integration first, fallback to HTTP service
+        if LOCAL_NEMO_AVAILABLE:
+            logger.info(f"[{stream_id}] Using local NeMo Guardrails integration")
+            generator = _local_nemo_guardrails_stream(
+                messages_for_llm=messages_for_llm,
+                stream_id=stream_id,
+                model_name=effective_model_name,
+            )
+        else:
+            logger.info(f"[{stream_id}] Using HTTP NeMo Guardrails service")
+            generator = _guardrails_ollama_stream(
+                model_name_for_guardrails=effective_model_name,
+                messages_payload=messages_for_llm,
+                stream_id=stream_id,
+            )
     else:
         logger.info(
             f"[{stream_id}] Routing directly to Ollama. RAG prefix used: {rag_prefix_generated}. Final messages count: {len(messages_for_llm)}"
