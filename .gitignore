@@ -1,3 +1,326 @@
-/.history
-/backend/__pycache__
-/frontend/node_modules
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# === Node.js ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# Snowpack dependency directory
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Vite build output
+dist/
+dist-ssr/
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# === Docker ===
+.dockerignore
+
+# === AI/ML/NLP Specific ===
+# Model files (often large)
+*.model
+*.bin
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.onnx
+*.pt
+*.pth
+*.safetensors
+
+# Datasets (often large)
+*.csv
+*.tsv
+*.json
+*.jsonl
+*.parquet
+data/
+datasets/
+corpus/
+
+# Vector databases
+chromadb/
+*.db
+*.sqlite
+*.sqlite3
+
+# Model caches
+.cache/
+cache/
+.transformers/
+.sentence_transformers/
+
+# Embeddings
+embeddings/
+vectors/
+
+# Training outputs
+logs/
+runs/
+checkpoints/
+saved_models/
+
+# === Project Specific ===
+# Uploaded files
+uploads/
+temp_uploads/
+documents/
+
+# ChromaDB data
+chromadb_data/
+
+# Ollama models (if stored locally)
+models/
+
+# NeMo Guardrails configs with sensitive data
+# guardrails_config/*/secrets.yml
+
+# === Development ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Operating System ===
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Linux
+*~
+
+# === Logs ===
+*.log
+logs/
+
+# === Temporary files ===
+*.tmp
+*.temp
+tmp/
+temp/
+
+# === Secrets and Config ===
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+config.local.py
+secrets.yml
+.secrets/
+
+# === Backup files ===
+*.bak
+*.backup
+*_backup
+*_old
+
+# === History (VS Code extension) ===
+.history/
+
+# === Lock files (optional - comment out if you want to track them) ===
+# package-lock.json
+# uv.lock
+# poetry.lock
