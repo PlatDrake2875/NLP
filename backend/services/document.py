@@ -8,8 +8,8 @@ from typing import Any, Optional
 from fastapi import HTTPException
 from langchain_chroma import Chroma as LangchainChroma
 
-from config import COLLECTION_NAME
-from schemas import DocumentChunk, DocumentListResponse
+from backend.config import COLLECTION_NAME
+from backend.schemas import DocumentChunk, DocumentListResponse
 
 
 class DocumentService:
