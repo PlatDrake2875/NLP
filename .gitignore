@@ -324,3 +324,6 @@ secrets.yml
 package-lock.json
 uv.lock
 poetry.lock
+
+# Python bytecode cache files
+*.cpython-*.pyc
