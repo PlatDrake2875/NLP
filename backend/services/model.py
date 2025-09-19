@@ -19,15 +19,6 @@ class ModelService:
         self.ollama_base_url = OLLAMA_BASE_URL
 
     async def list_available_models(self) -> list[OllamaModelInfo]:
-        """
-        Get list of available Ollama models.
-
-        Returns:
-            List of OllamaModelInfo objects
-
-        Raises:
-            HTTPException: If there's an error communicating with Ollama
-        """
         client = ollama.AsyncClient(host=self.ollama_base_url)
         ollama_list_response = await client.list()
 
@@ -54,30 +45,11 @@ class ModelService:
         return parsed_models
 
     def _parse_ollama_model(self, ollama_model_obj) -> Optional[OllamaModelInfo]:
-        """
-        Parse an Ollama model object into OllamaModelInfo.
-
-        Args:
-            ollama_model_obj: The model object from Ollama
-
-        Returns:
-            OllamaModelInfo instance or None if parsing fails
-        """
-
         model_data_dict = ollama_model_obj.model_dump()
 
         return OllamaModelInfo.from_ollama(model_data_dict)
 
     def _get_valid_status_code(self, status_code: int) -> int:
-        """
-        Ensure status code is valid, return 500 if not.
-
-        Args:
-            status_code: The status code to validate
-
-        Returns:
-            Valid HTTP status code
-        """
         if not isinstance(status_code, int) or status_code < 100 or status_code > 599:
             return 500
         return status_code

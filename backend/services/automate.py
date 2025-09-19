@@ -22,18 +22,6 @@ class AutomateService:
     async def process_automation_request(
         self, payload: AutomateRequest
     ) -> AutomateResponse:
-        """
-        Process an automation request based on the conversation history.
-
-        Args:
-            payload: The automation request containing task type and conversation history
-
-        Returns:
-            AutomateResponse with the automation results
-
-        Raises:
-            HTTPException: If the request is invalid or processing fails
-        """
         # Validate request structure
         self._validate_request(payload)
 

@@ -2,14 +2,11 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI  # Keep Request if needed elsewhere
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import configurations, routers, and setup functions
-from rag_components import setup_rag_components  # Import the setup function
-
-# Updated to include automate_router
-from routers import (
+from backend.rag_components import setup_rag_components
+from backend.routers import (
     automate_router,
     chat_router,
     document_router,
@@ -69,7 +66,7 @@ app.include_router(automate_router.router, prefix="/api", tags=["Automation Endp
 def test_chat_router(disable_guardrails_for_testing=False):
     from fastapi.testclient import TestClient
 
-    from routers.chat_router import router
+    from backend.routers.chat_router import router
 
     original_use_guardrails = None
     if disable_guardrails_for_testing:

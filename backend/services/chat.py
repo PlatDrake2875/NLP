@@ -17,8 +17,8 @@ from backend.config import (
     RAG_ENABLED,
     USE_GUARDRAILS,
 )
-from backend.nemo_guardrails_local import get_local_nemo_instance
 from backend.rag_components import get_rag_context_prefix
+from backend.services.nemo import get_local_nemo_instance
 
 
 class ChatService:
@@ -38,18 +38,6 @@ class ChatService:
         history: Optional[list[dict]] = None,
         use_rag: Optional[bool] = None,
     ) -> AsyncGenerator[str, None]:
-        """
-        Process a chat request and return a streaming response.
-
-        Args:
-            query: The user's question/message
-            model_name: The model to use (defaults to configured model)
-            history: Previous conversation history
-            use_rag: Whether to use RAG for this request (defaults to global config)
-
-        Yields:
-            SSE-formatted chunks of the response
-        """
         if history is None:
             history = []
         if use_rag is None:
