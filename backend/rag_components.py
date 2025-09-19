@@ -2,6 +2,21 @@
 from typing import Any, Optional
 
 import chromadb
+from fastapi import (
+    HTTPException,  # Ensure Depends is imported if used directly here, though typically in routers
+)
+from langchain_chroma import Chroma as LangchainChroma
+from langchain_core.documents import Document
+from langchain_core.messages import (  # Removed SystemMessage as it wasn't used
+    AIMessage,
+    HumanMessage,
+)
+from langchain_core.prompts import (
+    ChatPromptTemplate,  # Removed MessagesPlaceholder as it wasn't used directly
+)
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama
+
 from backend.config import (
     CHROMA_HOST,
     CHROMA_PORT,
@@ -17,20 +32,6 @@ from backend.config import (
     SIMPLE_PROMPT_TEMPLATE_STR,
     logger,
 )
-from fastapi import (
-    HTTPException,  # Ensure Depends is imported if used directly here, though typically in routers
-)
-from langchain_chroma import Chroma as LangchainChroma
-from langchain_core.documents import Document
-from langchain_core.messages import (  # Removed SystemMessage as it wasn't used
-    AIMessage,
-    HumanMessage,
-)
-from langchain_core.prompts import (
-    ChatPromptTemplate,  # Removed MessagesPlaceholder as it wasn't used directly
-)
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_ollama import ChatOllama
 
 # --- Globals for RAG Components ---
 chroma_client: Optional[chromadb.HttpClient] = None
