@@ -21,18 +21,6 @@ class DocumentService:
     async def get_all_documents(
         self, vectorstore: LangchainChroma
     ) -> DocumentListResponse:
-        """
-        Retrieve all document chunks from the vector store.
-
-        Args:
-            vectorstore: The vector store instance to retrieve documents from
-
-        Returns:
-            DocumentListResponse with all stored documents
-
-        Raises:
-            HTTPException: If retrieval fails
-        """
         try:
             # Get the underlying ChromaDB client
             client = self._get_chroma_client(vectorstore)

@@ -38,18 +38,6 @@ class ChatService:
         history: Optional[list[dict]] = None,
         use_rag: Optional[bool] = None,
     ) -> AsyncGenerator[str, None]:
-        """
-        Process a chat request and return a streaming response.
-
-        Args:
-            query: The user's question/message
-            model_name: The model to use (defaults to configured model)
-            history: Previous conversation history
-            use_rag: Whether to use RAG for this request (defaults to global config)
-
-        Yields:
-            SSE-formatted chunks of the response
-        """
         if history is None:
             history = []
         if use_rag is None:
