@@ -2,9 +2,7 @@
 models:
   - type: main
     engine: ollama
-    model: llama3
-    parameters:
-      base_url: http://host.docker.internal:11434
+    model: gemma3:latest
 
 # No external files referenced
 instructions:

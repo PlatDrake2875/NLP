@@ -5,6 +5,7 @@ Local NeMo Guardrails integration module.
 This module provides direct integration with NeMo Guardrails instead of using HTTP calls.
 It handles the initialization and interaction with the guardrails system locally.
 """
+
 import logging
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -52,8 +53,13 @@ class LocalNemoGuardrails:
             # Determine the base URL based on environment
             # Use localhost for local development, host.docker.internal for Docker
             import os
-            is_docker = os.path.exists('/.dockerenv')
-            base_url = "http://host.docker.internal:11434" if is_docker else "http://localhost:11434"
+
+            is_docker = os.path.exists("/.dockerenv")
+            base_url = (
+                "http://host.docker.internal:11434"
+                if is_docker
+                else "http://localhost:11434"
+            )
             logger.info(f"Using Ollama base URL: {base_url}")
 
             # Create config programmatically instead of loading from file
@@ -64,24 +70,16 @@ class LocalNemoGuardrails:
                         "type": "main",
                         "engine": "ollama",
                         "model": "gemma3:latest",
-                        "parameters": {
-                            "base_url": base_url
-                        }
+                        "parameters": {"base_url": base_url},
                     }
                 ],
                 "instructions": [
-                    {
-                        "type": "general",
-                        "content": "You are a helpful AI assistant."
-                    }
-                ]
+                    {"type": "general", "content": "You are a helpful AI assistant."}
+                ],
             }
 
             # Create rails configuration from dict
-            rails_config = RailsConfig.from_content(
-                colang_content="",
-                yaml_content=""
-            )
+            rails_config = RailsConfig.from_content(colang_content="", yaml_content="")
             rails_config.models = config_dict["models"]
             rails_config.instructions = config_dict["instructions"]
 
@@ -101,8 +99,13 @@ class LocalNemoGuardrails:
                 logger.info("Trying fallback initialization without guardrails config")
                 # Determine the base URL for fallback too
                 import os
-                is_docker = os.path.exists('/.dockerenv')
-                base_url = "http://host.docker.internal:11434" if is_docker else "http://localhost:11434"
+
+                is_docker = os.path.exists("/.dockerenv")
+                base_url = (
+                    "http://host.docker.internal:11434"
+                    if is_docker
+                    else "http://localhost:11434"
+                )
 
                 # Create a minimal rails instance
                 rails_config = RailsConfig.from_content(
@@ -114,7 +117,7 @@ models:
     model: gemma3:latest
     parameters:
       base_url: {base_url}
-"""
+""",
                 )
                 self.rails = LLMRails(rails_config)
                 self._is_initialized = True
@@ -129,7 +132,7 @@ models:
         model: str = "llama3",
         stream: bool = False,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> dict:
         """
         Process a chat completion request through NeMo Guardrails.
@@ -145,7 +148,9 @@ models:
             Dict: Chat completion response
         """
         if not self._is_initialized:
-            raise RuntimeError("NeMo Guardrails not initialized. Call initialize() first.")
+            raise RuntimeError(
+                "NeMo Guardrails not initialized. Call initialize() first."
+            )
 
         if not self.rails:
             raise RuntimeError("Rails not available")
@@ -161,7 +166,9 @@ models:
             if not user_message:
                 raise ValueError("No user message found in messages")
 
-            logger.info(f"Processing message through guardrails: {user_message[:100]}...")
+            logger.info(
+                f"Processing message through guardrails: {user_message[:100]}..."
+            )
 
             if stream:
                 # For streaming, we'll need to handle it differently
@@ -179,18 +186,16 @@ models:
                 "choices": [
                     {
                         "index": 0,
-                        "message": {
-                            "role": "assistant",
-                            "content": result
-                        },
-                        "finish_reason": "stop"
+                        "message": {"role": "assistant", "content": result},
+                        "finish_reason": "stop",
                     }
                 ],
                 "usage": {
                     "prompt_tokens": len(user_message.split()),
                     "completion_tokens": len(result.split()) if result else 0,
-                    "total_tokens": len(user_message.split()) + (len(result.split()) if result else 0)
-                }
+                    "total_tokens": len(user_message.split())
+                    + (len(result.split()) if result else 0),
+                },
             }
 
             logger.info(f"Generated response: {result[:100] if result else 'None'}...")
@@ -205,7 +210,7 @@ models:
         messages: list[dict[str, str]],
         model: str = "llama3",
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> AsyncIterator[str]:
         """
         Stream a chat completion response through NeMo Guardrails.
@@ -220,7 +225,9 @@ models:
             str: Streaming response chunks in SSE format
         """
         if not self._is_initialized:
-            raise RuntimeError("NeMo Guardrails not initialized. Call initialize() first.")
+            raise RuntimeError(
+                "NeMo Guardrails not initialized. Call initialize() first."
+            )
 
         # For now, implement streaming by getting the full response and yielding it
         # TODO: Implement true streaming if NeMo Guardrails supports it
@@ -230,7 +237,7 @@ models:
                 model=model,
                 stream=False,
                 max_tokens=max_tokens,
-                **kwargs
+                **kwargs,
             )
 
             # Simulate streaming by yielding the response
@@ -243,12 +250,8 @@ models:
                 "created": response["created"],
                 "model": model,
                 "choices": [
-                    {
-                        "index": 0,
-                        "delta": {"content": content},
-                        "finish_reason": None
-                    }
-                ]
+                    {"index": 0, "delta": {"content": content}, "finish_reason": None}
+                ],
             }
 
             yield f"data: {__import__('json').dumps(chunk_data)}\n\n"
@@ -259,13 +262,7 @@ models:
                 "object": "chat.completion.chunk",
                 "created": response["created"],
                 "model": model,
-                "choices": [
-                    {
-                        "index": 0,
-                        "delta": {},
-                        "finish_reason": "stop"
-                    }
-                ]
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
             }
 
             yield f"data: {__import__('json').dumps(final_chunk)}\n\n"
@@ -274,12 +271,7 @@ models:
         except Exception as e:
             logger.error(f"Error in streaming chat completion: {e}")
             # Yield error in SSE format
-            error_data = {
-                "error": {
-                    "message": str(e),
-                    "type": "internal_error"
-                }
-            }
+            error_data = {"error": {"message": str(e), "type": "internal_error"}}
             yield f"data: {__import__('json').dumps(error_data)}\n\n"
 
     def is_available(self) -> bool:
@@ -319,9 +311,7 @@ async def test_local_nemo():
             return False
 
         # Test a simple message
-        test_messages = [
-            {"role": "user", "content": "Hello, this is a test message."}
-        ]
+        test_messages = [{"role": "user", "content": "Hello, this is a test message."}]
 
         response = await nemo.chat_completion(messages=test_messages)
         logger.info(f"Test response: {response}")
@@ -335,5 +325,6 @@ async def test_local_nemo():
 
 if __name__ == "__main__":
     import asyncio
+
     logging.basicConfig(level=logging.INFO)
     asyncio.run(test_local_nemo())

@@ -2,6 +2,16 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
+# Install system dependencies needed for building Python packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    g++ \
+    gcc \
+    libc6-dev \
+    make \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 RUN pip install uv
 
@@ -9,7 +19,7 @@ RUN pip install uv
 COPY pyproject.toml ./
 
 # Install dependencies using uv
-RUN uv sync --no-editable --no-cache
+RUN uv sync --no-editable
 
 COPY . .
 
