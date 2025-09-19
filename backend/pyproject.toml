@@ -13,16 +13,17 @@ dependencies = [
     "httpx",
     "hf_xet",
     "ollama",
-    # RAG Dependencies
     "langchain",
     "langchain-community",
     "langchain-huggingface",
     "langchain-ollama",
     "langchain-chroma",
-    "chromadb-client==0.5.20",
+    "chromadb>=0.4.0,<0.6.0",
     "sentence-transformers",
     "pypdf",
     "tiktoken",
+    "nemoguardrails==0.13.0",
+    "reportlab",
 ]
 
 [project.optional-dependencies]

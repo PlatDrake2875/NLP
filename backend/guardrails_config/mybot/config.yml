@@ -1,0 +1,63 @@
+# Ultra-minimal NeMo Guardrails config without external dependencies
+models:
+  - type: main
+    engine: ollama
+    model: gemma3:latest
+
+# No external files referenced
+instructions:
+  - type: general
+    content: "You are a helpful AI assistant specialized in mathematics. You only answer math-related questions including arithmetic, algebra, geometry, calculus, statistics, and other mathematical topics. If someone asks about non-math topics, politely redirect them to ask math questions instead."
+
+# Define user intents
+rails:
+  input:
+    flows:
+      - self check input
+
+  output:
+    flows:
+      - self check output
+
+# User intent definitions
+define user intent ask math question:
+  "I want to solve a math problem"
+  "What is 2 + 2?"
+  "Can you help me with calculus?"
+  "How do I calculate the area of a circle?"
+  "What is the derivative of x^2?"
+  "Solve this equation for x"
+  "Can you explain algebra?"
+  "Help me with statistics"
+  "What's the integral of"
+  "How do I factor this polynomial?"
+
+define user intent ask non math question:
+  "What's the weather like?"
+  "Tell me about history"
+  "How do I cook pasta?"
+  "What's your favorite movie?"
+  "Tell me a joke"
+  "What's the capital of France?"
+  "How does a car work?"
+  "What's the latest news?"
+
+define bot intent answer math question:
+  "I'll help you with that math problem"
+  "Here's the mathematical solution"
+  "Let me solve this equation for you"
+
+define bot intent decline non math:
+  "I'm specialized in mathematics and can only help with math-related questions"
+  "I focus on mathematical topics. Could you ask me a math question instead?"
+
+# Conversation flows
+define flow self check input:
+  user ask non math question
+  bot decline non math
+  bot "I'm a math-focused AI assistant. I can help you with arithmetic, algebra, geometry, calculus, statistics, and other mathematical topics. Please ask me a math-related question!"
+  stop
+
+define flow math assistance:
+  user ask math question
+  bot answer math question

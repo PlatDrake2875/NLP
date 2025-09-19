@@ -1,84 +1,37 @@
-# version: '3.8' # Removed by user, keeping it removed.
+# Minimal docker-compose.yml for dependencies only
+# Run FastAPI locally with: uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+# Note: Uses your local Ollama installation instead of containerized version
 
 services:
+  # Frontend - only when you need the UI
   frontend:
     build: ./frontend
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      - /app/node_modules # Cache node_modules
+      - /app/node_modules
     environment:
-      - VITE_API_BASE_URL=http://backend:8000 # Frontend (in Docker) to Backend (in Docker)
-      - CHOKIDAR_USEPOLLING=true # For hot reloading in some environments
-    depends_on:
-      - backend
-    networks:
-      - app-network
+      - VITE_API_BASE_URL=http://localhost:8000  # Points to local FastAPI
+      - CHOKIDAR_USEPOLLING=true
+    profiles: ["ui"]  # Optional - only run when needed
 
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000" # Expose backend's internal port 8000 to host port 8000
-    volumes:
-      - ./backend:/app # Mount backend code
-    environment:
-      # User's existing environment variables:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434 # For backend to directly access Ollama on host
-      - CHROMA_HOST=chromadb
-      - CHROMA_PORT=8000 # ChromaDB's internal port (service-to-service)
-      - EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
-      - OLLAMA_MODEL=llama3 # Ensure this is consistent with your config.py (OLLAMA_MODEL_FOR_RAG)
-      # Corrected for NeMo Guardrails:
-      # Backend will connect to nemo-guardrails service on its internal port 8001, using the full API path.
-      - NEMO_GUARDRAILS_SERVER_URL=http://nemo-guardrails:8001
-      # Temporarily disable guardrails to bypass configuration issues
-      - USE_GUARDRAILS=false
-      # Consider adding LOG_LEVEL=INFO and GUARDRAILS_ENABLED=True if needed from previous versions
-    depends_on:
-      - chromadb
-      # - nemo-guardrails # Temporarily disabled
-    networks:
-      - app-network
-    # Add extra_hosts if host.docker.internal doesn't work on your Linux distribution
-    # for the backend to reach host Ollama (if it needs to directly).
-    # extra_hosts:
-    #   - "host.docker.internal:host-gateway"
-    # Added command to run the backend FastAPI application
-
-
-  nemo-guardrails:
-    build: ./nemo_guardrails_build # Assumes Dockerfile is in ./nemo_guardrails_build/
-    volumes:
-      - ./guardrails_config:/app/config/guardrails_config 
-    command: >-
-      nemoguardrails server
-        --config /app/config/guardrails_config  
-        --default-config-id mybot               
-        --port=8001                                                                      
-    ports:
-      # Maps host port 8002 to container port 8001 (where NeMo Guardrails is now listening).
-      - "8002:8001"
-    networks: [app-network]
-    # Consider adding environment variables like LOG_LEVEL and NEMO_GUARDRAILS_CONFIG_PATH if needed
-
-
+  # ChromaDB for vector storage - only when you need RAG
   chromadb:
-    image: chromadb/chroma:0.5.20 # User-specified version
+    image: chromadb/chroma:latest
     ports:
-      # Changed host port from 8001 to 8003 for clarity on the host machine.
-      # Maps host port 8003 to container port 8000 (ChromaDB's default internal port).
-      - "8003:8000" 
+      - "8001:8000"  # Expose on different port to avoid conflict with FastAPI
     volumes:
-      - chromadb_data:/chroma/chroma 
-    networks:
-      - app-network
-    # environment:
-    #   - ANONYMIZED_TELEMETRY=FALSE # Uncomment to disable telemetry if desired
+      - chroma_data:/chroma/chroma
+    profiles: ["rag"]  # Optional - only run when needed
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  chromadb_data: # Persists ChromaDB data
-
-networks:
-  app-network:
-    driver: bridge
+  chroma_data:

@@ -1,11 +1,8 @@
 # backend/schemas.py
-import logging
 from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
-
-logger = logging.getLogger("nlp_backend.schemas")  # Logger for this module
 
 
 # --- Generic Message Model (useful for conversation histories) ---
@@ -35,9 +32,6 @@ class OllamaModelInfo(BaseModel):
             "model"
         )  # 'model' is the key in ollama.Model
         if not model_name:
-            logger.warning(
-                f"Skipping model entry in from_ollama due to missing 'name'/'model': {raw}"
-            )
             return None
 
         modified_at_val = raw.get("modified_at")
@@ -51,14 +45,8 @@ class OllamaModelInfo(BaseModel):
                 dt_obj = datetime.fromisoformat(modified_at_val.replace("Z", "+00:00"))
                 modified_at_str = dt_obj.isoformat()
             except ValueError:
-                logger.warning(
-                    f"Could not parse modified_at string '{modified_at_val}' to datetime. Keeping as is."
-                )
                 modified_at_str = modified_at_val  # Keep as is if parsing fails
         else:
-            logger.warning(
-                f"modified_at value is not a datetime object or string: {modified_at_val}. Setting to 'N/A'."
-            )
             modified_at_str = "N/A"
 
         return cls(
@@ -207,3 +195,55 @@ class AutomateResponse(BaseModel):
                 },
             }
         }
+
+
+# --- Chat Models ---
+class HistoryMessage(BaseModel):
+    """Message in chat history with sender and text fields."""
+
+    sender: str = Field(..., description="Sender of the message ('user' or 'bot')")
+    text: str = Field(..., description="Content of the message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {"sender": "user", "text": "Hello, how are you?"}
+        }
+
+
+class ChatRequest(BaseModel):
+    """Request model for chat endpoint."""
+
+    query: str = Field(..., description="User's question or message")
+    model: Optional[str] = Field(None, description="Model to use for the response")
+    history: Optional[list[HistoryMessage]] = Field(
+        default=[], description="Previous conversation history"
+    )
+    use_rag: Optional[bool] = Field(
+        None, description="Whether to use RAG for this request"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "What is the weather like today?",
+                "model": "gemma3:4b-it-q4_K_M",
+                "history": [
+                    {"sender": "user", "text": "Hello"},
+                    {"sender": "bot", "text": "Hi there! How can I help you?"},
+                ],
+                "use_rag": True,
+            }
+        }
+
+
+class ChatStreamChunk(BaseModel):
+    """Individual chunk in a streaming chat response."""
+
+    token: Optional[str] = Field(None, description="Text token being streamed")
+    error: Optional[str] = Field(
+        None, description="Error message if something went wrong"
+    )
+    status: Optional[str] = Field(None, description="Status information")
+
+    class Config:
+        json_schema_extra = {"example": {"token": "Hello, I'm doing well!"}}
