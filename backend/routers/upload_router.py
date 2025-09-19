@@ -7,10 +7,10 @@ Handles HTTP concerns only, business logic is in services.upload.UploadService.
 from fastapi import APIRouter, Depends, File, UploadFile
 from langchain_chroma import Chroma as LangchainChroma
 
-from deps import get_upload_service
-from rag_components import get_vectorstore
-from schemas import UploadResponse
-from services.upload import UploadService
+from backend.deps import get_upload_service
+from backend.rag_components import get_vectorstore
+from backend.schemas import UploadResponse
+from backend.services.upload import UploadService
 
 router = APIRouter(
     prefix="/upload",

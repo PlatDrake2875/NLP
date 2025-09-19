@@ -17,8 +17,8 @@ from backend.config import (
     RAG_ENABLED,
     USE_GUARDRAILS,
 )
-from backend.nemo_guardrails_local import get_local_nemo_instance
 from backend.rag_components import get_rag_context_prefix
+from backend.services.nemo import get_local_nemo_instance
 
 
 class ChatService:

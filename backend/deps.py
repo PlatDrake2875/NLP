@@ -5,12 +5,12 @@ Provides service instances to endpoints.
 
 from functools import lru_cache
 
-from services.automate import AutomateService
-from services.chat import ChatService
-from services.document import DocumentService
-from services.health import HealthService
-from services.model import ModelService
-from services.upload import UploadService
+from backend.services.automate import AutomateService
+from backend.services.chat import ChatService
+from backend.services.document import DocumentService
+from backend.services.health import HealthService
+from backend.services.model import ModelService
+from backend.services.upload import UploadService
 
 
 @lru_cache

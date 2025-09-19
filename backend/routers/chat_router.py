@@ -7,9 +7,9 @@ Handles HTTP concerns only, business logic is in services.chat.ChatService.
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from deps import get_chat_service
-from schemas import ChatRequest
-from services.chat import ChatService
+from backend.deps import get_chat_service
+from backend.schemas import ChatRequest
+from backend.services.chat import ChatService
 
 # --- Router Setup ---
 router = APIRouter(
