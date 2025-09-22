@@ -8,8 +8,8 @@ from typing import Optional
 import ollama
 from fastapi import HTTPException
 
-from backend.config import OLLAMA_BASE_URL
-from backend.schemas import OllamaModelInfo
+from config import OLLAMA_BASE_URL
+from schemas import OllamaModelInfo
 
 
 class ModelService:

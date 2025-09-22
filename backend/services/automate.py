@@ -8,9 +8,9 @@ from typing import Any
 from fastapi import HTTPException
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from backend.rag_components import get_llm_for_automation
-from backend.schemas import AutomateRequest, AutomateResponse
-from backend.schemas import Message as PydanticMessage
+from rag_components import get_llm_for_automation
+from schemas import AutomateRequest, AutomateResponse
+from schemas import Message as PydanticMessage
 
 
 class AutomateService:

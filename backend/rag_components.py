@@ -17,7 +17,7 @@ from langchain_core.prompts import (
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
 
-from backend.config import (
+from config import (
     CHROMA_HOST,
     CHROMA_PORT,
     COLLECTION_NAME,

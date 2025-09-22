@@ -10,15 +10,15 @@ from typing import Optional
 
 import httpx
 
-from backend.config import (
+from config import (
     NEMO_GUARDRAILS_SERVER_URL,
     OLLAMA_BASE_URL,
     OLLAMA_MODEL_FOR_RAG,
     RAG_ENABLED,
     USE_GUARDRAILS,
 )
-from backend.rag_components import get_rag_context_prefix
-from backend.services.nemo import get_local_nemo_instance
+from rag_components import get_rag_context_prefix
+from services.nemo import get_local_nemo_instance
 
 
 class ChatService:

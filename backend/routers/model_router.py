@@ -6,9 +6,9 @@ Handles HTTP concerns only, business logic is in services.model.ModelService.
 
 from fastapi import APIRouter, Depends
 
-from backend.deps import get_model_service
-from backend.schemas import OllamaModelInfo
-from backend.services.model import ModelService
+from deps import get_model_service
+from schemas import OllamaModelInfo
+from services.model import ModelService
 
 router = APIRouter(
     prefix="/models",  # Prefix relative to the /api added in main.py

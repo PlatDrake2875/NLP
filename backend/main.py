@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.rag_components import setup_rag_components
-from backend.routers import (
+from rag_components import setup_rag_components
+from routers import (
     automate_router,
     chat_router,
     document_router,
@@ -66,7 +66,7 @@ app.include_router(automate_router.router, prefix="/api", tags=["Automation Endp
 def test_chat_router(disable_guardrails_for_testing=False):
     from fastapi.testclient import TestClient
 
-    from backend.routers.chat_router import router
+    from routers.chat_router import router
 
     original_use_guardrails = None
     if disable_guardrails_for_testing:

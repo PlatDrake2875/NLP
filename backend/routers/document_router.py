@@ -7,10 +7,10 @@ Handles HTTP concerns only, business logic is in services.document.DocumentServi
 from fastapi import APIRouter, Depends
 from langchain_chroma import Chroma as LangchainChroma
 
-from backend.deps import get_document_service
-from backend.rag_components import get_vectorstore
-from backend.schemas import DocumentListResponse
-from backend.services.document import DocumentService
+from deps import get_document_service
+from rag_components import get_vectorstore
+from schemas import DocumentListResponse
+from services.document import DocumentService
 
 router = APIRouter(
     prefix="/documents",

@@ -10,8 +10,8 @@ import ollama
 from fastapi.responses import JSONResponse
 from langchain_ollama import ChatOllama
 
-from backend.config import OLLAMA_BASE_URL
-from backend.schemas import HealthResponse, HealthStatusDetail
+from config import OLLAMA_BASE_URL
+from schemas import HealthResponse, HealthStatusDetail
 
 
 class HealthService:

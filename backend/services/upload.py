@@ -10,7 +10,7 @@ from langchain_chroma import Chroma as LangchainChroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from backend.schemas import UploadResponse
+from schemas import UploadResponse
 
 
 class UploadService:

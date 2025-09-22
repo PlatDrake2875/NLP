@@ -6,9 +6,9 @@ Handles HTTP concerns only, business logic is in services.automate.AutomateServi
 
 from fastapi import APIRouter, Depends
 
-from backend.deps import get_automate_service
-from backend.schemas import AutomateRequest, AutomateResponse
-from backend.services.automate import AutomateService
+from deps import get_automate_service
+from schemas import AutomateRequest, AutomateResponse
+from services.automate import AutomateService
 
 router = APIRouter()
 

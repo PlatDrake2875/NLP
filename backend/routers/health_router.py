@@ -11,13 +11,13 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from langchain_ollama import ChatOllama
 
-from backend.deps import get_health_service
-from backend.rag_components import (
+from deps import get_health_service
+from rag_components import (
     get_optional_chroma_client,
     get_optional_ollama_chat_for_rag,
 )
-from backend.schemas import HealthResponse
-from backend.services.health import HealthService
+from schemas import HealthResponse
+from services.health import HealthService
 
 router = APIRouter(prefix="/health", tags=["health"])
 
