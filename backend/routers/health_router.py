@@ -11,10 +11,13 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from langchain_ollama import ChatOllama
 
-from deps import get_health_service
-from rag_components import get_optional_chroma_client, get_optional_ollama_chat_for_rag
-from schemas import HealthResponse
-from services.health import HealthService
+from backend.deps import get_health_service
+from backend.rag_components import (
+    get_optional_chroma_client,
+    get_optional_ollama_chat_for_rag,
+)
+from backend.schemas import HealthResponse
+from backend.services.health import HealthService
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -27,19 +30,6 @@ async def health_check_endpoint(
         get_optional_ollama_chat_for_rag
     ),
 ):
-    """
-    Check the health status of all system components.
-
-    Args:
-        health_service: Injected HealthService instance
-        chroma_client: Optional ChromaDB client instance
-        ollama_chat_for_rag: Optional Ollama chat instance
-
-    Returns:
-        HealthResponse with component status details
-        HTTP 503 status code if any component is unhealthy
-    """
-    # Delegate all business logic to the service
     response_payload = await health_service.perform_health_check(
         chroma_client, ollama_chat_for_rag
     )

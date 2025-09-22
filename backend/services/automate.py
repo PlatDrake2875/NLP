@@ -26,7 +26,7 @@ class AutomateService:
         self._validate_request(payload)
 
         # Get LLM instance for the specified model
-        llm_to_use = get_llm_for_automation(model_name=payload.model)
+        llm_to_use = get_llm_for_automation()
 
         # Convert conversation history to LangChain messages
         langchain_messages = self._convert_to_langchain_messages(

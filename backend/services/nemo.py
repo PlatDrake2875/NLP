@@ -84,7 +84,6 @@ instructions:
 
             # Create a minimal rails instance
             rails_config = RailsConfig.from_content(
-                colang_content="",
                 yaml_content=f"""
 models:
   - type: main

@@ -23,11 +23,10 @@ from backend.config import (
     COLLECTION_NAME,
     EMBEDDING_MODEL_NAME,
     OLLAMA_BASE_URL,
-    # Attempt to import the new config for automation LLM
     OLLAMA_MODEL_FOR_AUTOMATION,
     OLLAMA_MODEL_FOR_RAG,
     RAG_CONTEXT_PREFIX_TEMPLATE_STR,
-    RAG_ENABLED,  # Imported from config
+    RAG_ENABLED,
     RAG_PROMPT_TEMPLATE_STR,
     SIMPLE_PROMPT_TEMPLATE_STR,
     logger,
@@ -63,15 +62,7 @@ class RAGComponents:
     def setup_components(self):
         """Initializes all RAG components."""
         # 1. Embedding Function
-        try:
-            self.embedding_function = HuggingFaceEmbeddings(
-                model_name=EMBEDDING_MODEL_NAME
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to initialize HuggingFace embeddings: %s", e, exc_info=True
-            )
-            self.embedding_function = None
+        self.embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
         # 2. ChromaDB Client and Vectorstore
         if self.embedding_function:
@@ -81,6 +72,20 @@ class RAGComponents:
                 )
                 temp_chroma_client.heartbeat()
                 self.chroma_client = temp_chroma_client
+
+                # Try to get existing collection first, create if it doesn't exist
+                try:
+                    self.chroma_client.get_collection(name=COLLECTION_NAME)
+                    logger.info(
+                        f"Using existing ChromaDB collection: {COLLECTION_NAME}"
+                    )
+                except ValueError:
+                    # Collection doesn't exist, create it
+                    self.chroma_client.create_collection(
+                        name=COLLECTION_NAME,
+                        metadata={"hnsw:space": "cosine"},  # Explicit metadata
+                    )
+                    logger.info(f"Created new ChromaDB collection: {COLLECTION_NAME}")
 
                 self.vectorstore = LangchainChroma(
                     client=self.chroma_client,
@@ -100,69 +105,31 @@ class RAGComponents:
             self.chroma_client = self.vectorstore = self.retriever = None
 
         # 3. ChatOllama LLM (for RAG)
-        if OLLAMA_BASE_URL:
-            try:
-                self.ollama_chat_for_rag = ChatOllama(
-                    model=OLLAMA_MODEL_FOR_RAG,
-                    base_url=OLLAMA_BASE_URL,
-                    temperature=0.1,  # Example temperature
-                )
-            except Exception as e:
-                logger.error(
-                    "Failed to initialize ChatOllama for RAG: %s", e, exc_info=True
-                )
-                self.ollama_chat_for_rag = None
-        else:
-            self.ollama_chat_for_rag = None
+        self.ollama_chat_for_rag = ChatOllama(
+            model=OLLAMA_MODEL_FOR_RAG,
+            base_url=OLLAMA_BASE_URL,
+            temperature=0.1,  # Example temperature
+        )
 
         # 4. ChatOllama LLM (for Automation Tasks)
-        if OLLAMA_BASE_URL:
-            try:
-                self.ollama_chat_for_automation = ChatOllama(
-                    model=OLLAMA_MODEL_FOR_AUTOMATION,
-                    base_url=OLLAMA_BASE_URL,
-                    temperature=0.2,
-                )
-            except Exception as e:
-                logger.error(
-                    "Failed to initialize ChatOllama for Automation: %s",
-                    e,
-                    exc_info=True,
-                )
-                self.ollama_chat_for_automation = None
-        else:
-            self.ollama_chat_for_automation = None
+        self.ollama_chat_for_automation = ChatOllama(
+            model=OLLAMA_MODEL_FOR_AUTOMATION,
+            base_url=OLLAMA_BASE_URL,
+            temperature=0.2,
+        )
 
         # 5. Prompt Templates
-        try:
-            self.rag_prompt_template_obj = ChatPromptTemplate.from_template(
-                RAG_PROMPT_TEMPLATE_STR
-            )
-        except Exception as e:
-            logger.error("Failed to create RAG prompt template: %s", e, exc_info=True)
-            self.rag_prompt_template_obj = None
+        self.rag_prompt_template_obj = ChatPromptTemplate.from_template(
+            RAG_PROMPT_TEMPLATE_STR
+        )
 
-        try:
-            self.simple_prompt_template_obj = ChatPromptTemplate.from_template(
-                SIMPLE_PROMPT_TEMPLATE_STR
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to create Simple prompt template: %s", e, exc_info=True
-            )
-            self.simple_prompt_template_obj = None
+        self.simple_prompt_template_obj = ChatPromptTemplate.from_template(
+            SIMPLE_PROMPT_TEMPLATE_STR
+        )
 
-        try:
-            self.rag_context_prefix_prompt_template_obj = (
-                ChatPromptTemplate.from_template(RAG_CONTEXT_PREFIX_TEMPLATE_STR)
-            )
-        except Exception as e:
-            logger.error(
-                "Failed to create RAG context prefix prompt template: %s",
-                e,
-                exc_info=True,
-            )
-            self.rag_context_prefix_prompt_template_obj = None
+        self.rag_context_prefix_prompt_template_obj = ChatPromptTemplate.from_template(
+            RAG_CONTEXT_PREFIX_TEMPLATE_STR
+        )
 
 
 def get_rag_components() -> RAGComponents:
