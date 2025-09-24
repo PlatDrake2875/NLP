@@ -1,118 +1,132 @@
 /* src/components/Header.module.css */
 
-.chatHeader { /* Renamed */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 1.5rem;
-    background-color: var(--bg-primary); /* Use variable */
-    border-bottom: 1px solid var(--border-primary);
-    flex-shrink: 0;
-    position: relative;
-    z-index: 10;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-    gap: 1rem;
-  }
-  
-  .headerTitle { /* Renamed */
-    flex-grow: 1;
-    min-width: 0;
-  }
-  
-  .chatHeader h1 { /* Target h1 within the header */
-    font-size: 1rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 0;
-    color: var(--text-primary); /* Ensure text color uses variable */
-    transition: color 0.3s ease;
-  }
-  
-  .headerControls { /* Renamed */
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-shrink: 0;
-  }
-  
-  .modelSelectorContainer { /* Renamed */
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-  
-  .modelSelect { /* Renamed */
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-select);
-    background-color: var(--bg-button-secondary);
-    color: var(--text-primary);
-    cursor: pointer;
-    min-width: 150px;
-    max-width: 250px;
-    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.3s ease;
-  }
-  
-  .modelSelect:hover {
-    border-color: var(--border-focus);
-  }
-  
-  .modelSelect:disabled {
-    background-color: var(--bg-select-disabled);
-    color: var(--text-disabled);
-    cursor: not-allowed;
-    border-color: var(--border-primary);
-  }
-  
-  .modelErrorIndicator { /* Renamed */
-    color: var(--text-error);
-    font-size: 1rem;
-    cursor: help;
-  }
-  
-  .headerActions { /* Renamed */
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  /* Style all buttons within headerActions */
-  .headerActions button {
-    background-color: transparent;
-    border: 1px solid var(--border-primary);
-    color: var(--text-secondary);
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  }
-  
-  .headerActions button:hover:not(:disabled) {
-    background-color: var(--bg-button-secondary);
-    border-color: var(--bg-button-secondary);
-    color: var(--text-primary);
-  }
-  .headerActions button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: transparent;
-    color: var(--text-disabled);
-    border-color: var(--border-primary);
-  }
-  
-  /* Specific button classes if needed, though targeting via parent is often enough */
-  /* .themeToggleBtn {} */
-  /* .clearHistoryBtn {} */
-  /* .downloadHistoryBtn {} */
-  
-  
+.chatHeader {
+	/* Renamed */
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.75rem 1.5rem;
+	background-color: var(--bg-primary); /* Use variable */
+	border-bottom: 1px solid var(--border-primary);
+	flex-shrink: 0;
+	position: relative;
+	z-index: 10;
+	transition:
+		background-color 0.3s ease,
+		border-color 0.3s ease;
+	gap: 1rem;
+}
+
+.headerTitle {
+	/* Renamed */
+	flex-grow: 1;
+	min-width: 0;
+}
+
+.chatHeader h1 {
+	/* Target h1 within the header */
+	font-size: 1rem;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin: 0;
+	color: var(--text-primary); /* Ensure text color uses variable */
+	transition: color 0.3s ease;
+}
+
+.headerControls {
+	/* Renamed */
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.modelSelectorContainer {
+	/* Renamed */
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.modelSelect {
+	/* Renamed */
+	padding: 0.4rem 0.8rem;
+	font-size: 0.85rem;
+	border-radius: 6px;
+	border: 1px solid var(--border-select);
+	background-color: var(--bg-button-secondary);
+	color: var(--text-primary);
+	cursor: pointer;
+	min-width: 150px;
+	max-width: 250px;
+	transition:
+		border-color 0.2s ease,
+		background-color 0.2s ease,
+		color 0.3s ease;
+}
+
+.modelSelect:hover {
+	border-color: var(--border-focus);
+}
+
+.modelSelect:disabled {
+	background-color: var(--bg-select-disabled);
+	color: var(--text-disabled);
+	cursor: not-allowed;
+	border-color: var(--border-primary);
+}
+
+.modelErrorIndicator {
+	/* Renamed */
+	color: var(--text-error);
+	font-size: 1rem;
+	cursor: help;
+}
+
+.headerActions {
+	/* Renamed */
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+/* Style all buttons within headerActions */
+.headerActions button {
+	background-color: transparent;
+	border: 1px solid var(--border-primary);
+	color: var(--text-secondary);
+	padding: 0;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 1rem;
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
+}
+
+.headerActions button:hover:not(:disabled) {
+	background-color: var(--bg-button-secondary);
+	border-color: var(--bg-button-secondary);
+	color: var(--text-primary);
+}
+.headerActions button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	background-color: transparent;
+	color: var(--text-disabled);
+	border-color: var(--border-primary);
+}
+
+/* Specific button classes if needed, though targeting via parent is often enough */
+/* .themeToggleBtn {} */
+/* .clearHistoryBtn {} */
+/* .downloadHistoryBtn {} */

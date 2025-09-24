@@ -17,32 +17,123 @@ from langchain_core.prompts import (
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
 
-from backend.config import (
+from config import (
     CHROMA_HOST,
     CHROMA_PORT,
     COLLECTION_NAME,
     EMBEDDING_MODEL_NAME,
     OLLAMA_BASE_URL,
-    # Attempt to import the new config for automation LLM
     OLLAMA_MODEL_FOR_AUTOMATION,
     OLLAMA_MODEL_FOR_RAG,
     RAG_CONTEXT_PREFIX_TEMPLATE_STR,
-    RAG_ENABLED,  # Imported from config
+    RAG_ENABLED,
     RAG_PROMPT_TEMPLATE_STR,
     SIMPLE_PROMPT_TEMPLATE_STR,
     logger,
 )
 
-# --- Globals for RAG Components ---
-chroma_client: Optional[chromadb.HttpClient] = None
-embedding_function: Optional[HuggingFaceEmbeddings] = None
-vectorstore: Optional[LangchainChroma] = None
-retriever: Optional[Any] = None
-ollama_chat_for_rag: Optional[ChatOllama] = None
-ollama_chat_for_automation: Optional[ChatOllama] = None  # New global for automation LLM
-rag_prompt_template_obj: Optional[ChatPromptTemplate] = None
-simple_prompt_template_obj: Optional[ChatPromptTemplate] = None
-rag_context_prefix_prompt_template_obj: Optional[ChatPromptTemplate] = None
+
+class RAGComponents:
+    """Singleton class to manage RAG components without global variables."""
+
+    _instance: Optional["RAGComponents"] = None
+    _initialized: bool = False
+
+    def __new__(cls) -> "RAGComponents":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not self._initialized:
+            self.chroma_client: Optional[chromadb.HttpClient] = None
+            self.embedding_function: Optional[HuggingFaceEmbeddings] = None
+            self.vectorstore: Optional[LangchainChroma] = None
+            self.retriever: Optional[Any] = None
+            self.ollama_chat_for_rag: Optional[ChatOllama] = None
+            self.ollama_chat_for_automation: Optional[ChatOllama] = None
+            self.rag_prompt_template_obj: Optional[ChatPromptTemplate] = None
+            self.simple_prompt_template_obj: Optional[ChatPromptTemplate] = None
+            self.rag_context_prefix_prompt_template_obj: Optional[
+                ChatPromptTemplate
+            ] = None
+            RAGComponents._initialized = True
+
+    def setup_components(self):
+        """Initializes all RAG components."""
+        # 1. Embedding Function
+        self.embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+
+        # 2. ChromaDB Client and Vectorstore
+        if self.embedding_function:
+            try:
+                temp_chroma_client = chromadb.HttpClient(
+                    host=CHROMA_HOST, port=int(CHROMA_PORT)
+                )
+                temp_chroma_client.heartbeat()
+                self.chroma_client = temp_chroma_client
+
+                # Try to get existing collection first, create if it doesn't exist
+                try:
+                    self.chroma_client.get_collection(name=COLLECTION_NAME)
+                    logger.info(
+                        f"Using existing ChromaDB collection: {COLLECTION_NAME}"
+                    )
+                except ValueError:
+                    self.chroma_client.create_collection(
+                        name=COLLECTION_NAME,
+                        metadata={"hnsw:space": "cosine"},  # Explicit metadata
+                    )
+                    logger.info(f"Created new ChromaDB collection: {COLLECTION_NAME}")
+
+                self.vectorstore = LangchainChroma(
+                    client=self.chroma_client,
+                    collection_name=COLLECTION_NAME,
+                    embedding_function=self.embedding_function,
+                )
+                self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 3})
+
+            except Exception as e:
+                logger.critical(
+                    "Failed to initialize ChromaDB client/vectorstore/retriever: %s",
+                    e,
+                    exc_info=True,
+                )
+                self.chroma_client = self.vectorstore = self.retriever = None
+        else:
+            self.chroma_client = self.vectorstore = self.retriever = None
+
+        # 3. ChatOllama LLM (for RAG)
+        self.ollama_chat_for_rag = ChatOllama(
+            model=OLLAMA_MODEL_FOR_RAG,
+            base_url=OLLAMA_BASE_URL,
+            temperature=0.1,  # Example temperature
+        )
+
+        # 4. ChatOllama LLM (for Automation Tasks)
+        self.ollama_chat_for_automation = ChatOllama(
+            model=OLLAMA_MODEL_FOR_AUTOMATION,
+            base_url=OLLAMA_BASE_URL,
+            temperature=0.2,
+        )
+
+        # 5. Prompt Templates
+        self.rag_prompt_template_obj = ChatPromptTemplate.from_template(
+            RAG_PROMPT_TEMPLATE_STR
+        )
+
+        self.simple_prompt_template_obj = ChatPromptTemplate.from_template(
+            SIMPLE_PROMPT_TEMPLATE_STR
+        )
+
+        self.rag_context_prefix_prompt_template_obj = ChatPromptTemplate.from_template(
+            RAG_CONTEXT_PREFIX_TEMPLATE_STR
+        )
+
+
+def get_rag_components() -> RAGComponents:
+    """Get the singleton RAG components instance."""
+    return RAGComponents()
 
 
 # --- Helper Functions (format_history_for_lc, format_docs remain the same) ---
@@ -73,188 +164,103 @@ def format_docs(docs: list[Document]) -> str:
 
 # --- Setup Function ---
 def setup_rag_components():
-    """Initializes all RAG components and stores them in globals."""
-    global \
-        chroma_client, \
-        embedding_function, \
-        vectorstore, \
-        retriever, \
-        ollama_chat_for_rag, \
-        ollama_chat_for_automation, \
-        rag_prompt_template_obj, \
-        simple_prompt_template_obj, \
-        rag_context_prefix_prompt_template_obj
-
-    # 1. Embedding Function (same as before)
-    try:
-        embedding_function = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
-    except Exception as e:
-        logger.error(f"Failed to initialize HuggingFace embeddings: {e}", exc_info=True)
-        embedding_function = None
-
-    # 2. ChromaDB Client and Vectorstore (same as before)
-    if embedding_function:
-        try:
-            temp_chroma_client = chromadb.HttpClient(
-                host=CHROMA_HOST, port=int(CHROMA_PORT)
-            )
-            temp_chroma_client.heartbeat()
-            chroma_client = temp_chroma_client
-
-            vectorstore = LangchainChroma(
-                client=chroma_client,
-                collection_name=COLLECTION_NAME,
-                embedding_function=embedding_function,
-            )
-            retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-
-        except Exception as e:
-            logger.critical(
-                f"Failed to initialize ChromaDB client/vectorstore/retriever: {e}",
-                exc_info=True,
-            )
-            chroma_client = vectorstore = retriever = None
-    else:
-        chroma_client = vectorstore = retriever = None
-
-    # 3. ChatOllama LLM (for RAG) (same as before)
-    if OLLAMA_BASE_URL:
-        try:
-            ollama_chat_for_rag = ChatOllama(
-                model=OLLAMA_MODEL_FOR_RAG,
-                base_url=OLLAMA_BASE_URL,
-                temperature=0.1,  # Example temperature
-            )
-        except Exception as e:
-            logger.error(f"Failed to initialize ChatOllama for RAG: {e}", exc_info=True)
-            ollama_chat_for_rag = None
-    else:
-        ollama_chat_for_rag = None
-
-    # 4. ChatOllama LLM (for Automation Tasks) - NEW
-    if OLLAMA_BASE_URL:
-        try:
-            ollama_chat_for_automation = ChatOllama(
-                model=OLLAMA_MODEL_FOR_AUTOMATION,
-                base_url=OLLAMA_BASE_URL,
-                temperature=0.2,
-            )
-        except Exception as e:
-            logger.error(
-                f"Failed to initialize ChatOllama for Automation: {e}", exc_info=True
-            )
-            ollama_chat_for_automation = None
-    else:
-        ollama_chat_for_automation = None
-
-    # 5. Prompt Templates (same as before)
-    try:
-        rag_prompt_template_obj = ChatPromptTemplate.from_template(
-            RAG_PROMPT_TEMPLATE_STR
-        )
-    except Exception as e:
-        logger.error(f"Failed to create RAG prompt template: {e}", exc_info=True)
-        rag_prompt_template_obj = None
-
-    try:
-        simple_prompt_template_obj = ChatPromptTemplate.from_template(
-            SIMPLE_PROMPT_TEMPLATE_STR
-        )
-    except Exception as e:
-        logger.error(f"Failed to create Simple prompt template: {e}", exc_info=True)
-        simple_prompt_template_obj = None
-
-    try:
-        rag_context_prefix_prompt_template_obj = ChatPromptTemplate.from_template(
-            RAG_CONTEXT_PREFIX_TEMPLATE_STR
-        )
-    except Exception as e:
-        logger.error(
-            f"Failed to create RAG context prefix prompt template: {e}", exc_info=True
-        )
-        rag_context_prefix_prompt_template_obj = None
+    """Initializes all RAG components using the singleton pattern."""
+    rag_components = get_rag_components()
+    rag_components.setup_components()
 
 
 # --- Dependency Functions (getters for initialized components) ---
 def get_chroma_client() -> chromadb.HttpClient:
-    if chroma_client is None:
+    rag_components = get_rag_components()
+    if rag_components.chroma_client is None:
         raise HTTPException(status_code=503, detail="ChromaDB client is not available.")
-    return chroma_client
+    return rag_components.chroma_client
 
 
 def get_vectorstore() -> LangchainChroma:
-    if vectorstore is None:
+    rag_components = get_rag_components()
+    if rag_components.vectorstore is None:
         raise HTTPException(status_code=503, detail="Vector store is not available.")
-    return vectorstore
+    return rag_components.vectorstore
 
 
 def get_embedding_function() -> HuggingFaceEmbeddings:
-    if embedding_function is None:
+    rag_components = get_rag_components()
+    if rag_components.embedding_function is None:
         raise HTTPException(
             status_code=503, detail="Embedding function is not available."
         )
-    return embedding_function
+    return rag_components.embedding_function
 
 
 def get_retriever() -> Any:
-    if retriever is None:
+    rag_components = get_rag_components()
+    if rag_components.retriever is None:
         raise HTTPException(status_code=503, detail="Retriever is not available.")
-    return retriever
+    return rag_components.retriever
 
 
 def get_ollama_chat_for_rag() -> ChatOllama:
-    if ollama_chat_for_rag is None:
+    rag_components = get_rag_components()
+    if rag_components.ollama_chat_for_rag is None:
         raise HTTPException(status_code=503, detail="RAG chat model is not available.")
-    return ollama_chat_for_rag
+    return rag_components.ollama_chat_for_rag
 
 
 # --- Function that was missing ---
 def get_llm_for_automation() -> ChatOllama:
-    """
-    Returns the initialized ChatOllama instance intended for automation tasks.
-    This function is the one your automate_router.py is trying to import.
-    """
-    if ollama_chat_for_automation is None:
+    rag_components = get_rag_components()
+    if rag_components.ollama_chat_for_automation is None:
         raise HTTPException(status_code=503, detail="Automation LLM is not available.")
-    return ollama_chat_for_automation
+    return rag_components.ollama_chat_for_automation
 
 
 # --- Optional Dependencies (for health check) ---
 def get_optional_chroma_client() -> Optional[chromadb.HttpClient]:
-    return chroma_client
+    rag_components = get_rag_components()
+    return rag_components.chroma_client
 
 
 def get_optional_ollama_chat_for_rag() -> Optional[ChatOllama]:
-    return ollama_chat_for_rag
+    rag_components = get_rag_components()
+    return rag_components.ollama_chat_for_rag
 
 
 def get_optional_llm_for_automation() -> Optional[ChatOllama]:
-    return ollama_chat_for_automation
+    rag_components = get_rag_components()
+    return rag_components.ollama_chat_for_automation
 
 
-# --- Function to Generate RAG Context Prefix (same as before) ---
+# --- Function to Generate RAG Context Prefix ---
 async def get_rag_context_prefix(query: str) -> Optional[str]:
     if not RAG_ENABLED:
         return None
-    if not retriever or not rag_context_prefix_prompt_template_obj:
+
+    rag_components = get_rag_components()
+    if (
+        not rag_components.retriever
+        or not rag_components.rag_context_prefix_prompt_template_obj
+    ):
         return None
 
     try:
-        retrieved_docs = await retriever.ainvoke(query)
+        retrieved_docs = await rag_components.retriever.ainvoke(query)
 
         if not retrieved_docs:
             return None
 
         formatted_context = format_docs(retrieved_docs)
 
-        if rag_context_prefix_prompt_template_obj:
-            formatted_prompt = rag_context_prefix_prompt_template_obj.format(
-                context=formatted_context, question=query
+        if rag_components.rag_context_prefix_prompt_template_obj:
+            formatted_prompt = (
+                rag_components.rag_context_prefix_prompt_template_obj.format(
+                    context=formatted_context, question=query
+                )
             )
             return formatted_prompt
         else:
             return None
 
     except Exception as e:
-        logger.error(f"Error generating RAG context prefix: {e}", exc_info=True)
+        logger.error("Error generating RAG context prefix: %s", e, exc_info=True)
         return None

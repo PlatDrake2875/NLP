@@ -10,8 +10,8 @@ import ollama
 from fastapi.responses import JSONResponse
 from langchain_ollama import ChatOllama
 
-from backend.config import OLLAMA_BASE_URL
-from backend.schemas import HealthResponse, HealthStatusDetail
+from config import OLLAMA_BASE_URL
+from schemas import HealthResponse, HealthStatusDetail
 
 
 class HealthService:
@@ -25,16 +25,6 @@ class HealthService:
         chroma_client: Optional[chromadb.HttpClient] = None,
         ollama_chat_for_rag: Optional[ChatOllama] = None,
     ) -> HealthResponse | JSONResponse:
-        """
-        Perform comprehensive health checks on all system components.
-
-        Args:
-            chroma_client: Optional ChromaDB client instance
-            ollama_chat_for_rag: Optional ChatOllama instance for RAG
-
-        Returns:
-            HealthResponse with component statuses or JSONResponse for errors
-        """
         # Check Ollama status
         ollama_status = await self._check_ollama_status(ollama_chat_for_rag)
 

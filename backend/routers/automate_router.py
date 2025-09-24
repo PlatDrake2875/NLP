@@ -18,15 +18,4 @@ async def automate_conversation_endpoint(
     payload: AutomateRequest,
     automate_service: AutomateService = Depends(get_automate_service),
 ):
-    """
-    Endpoint to automate a conversation based on the provided history and parameters.
-
-    Args:
-        payload: AutomateRequest with conversation history and automation task
-        automate_service: Injected AutomateService instance
-
-    Returns:
-        AutomateResponse with automation results
-    """
-    # Delegate all business logic to the service
     return await automate_service.process_automation_request(payload)

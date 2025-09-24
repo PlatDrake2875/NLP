@@ -1,415 +1,427 @@
 /* src/components/Sidebar.module.css */
 
 .sidebar {
-  width: 260px;
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border-primary);
-  flex-shrink: 0;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+	width: 260px;
+	background-color: var(--bg-secondary);
+	color: var(--text-secondary);
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	border-right: 1px solid var(--border-primary);
+	flex-shrink: 0;
+	transition:
+		background-color 0.3s ease,
+		color 0.3s ease,
+		border-color 0.3s ease;
 }
 
 /* New container for top buttons */
 .sidebarTopActions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem; /* Space between buttons */
-  margin-bottom: 1rem; /* Space below buttons */
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem; /* Space between buttons */
+	margin-bottom: 1rem; /* Space below buttons */
 }
 
 .newChatButton {
-  background-color: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  /* margin-bottom: 1rem; Remove bottom margin */
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  width: 100%;
+	background-color: transparent;
+	color: var(--text-primary);
+	border: 1px solid var(--border-primary);
+	padding: 0.6rem 0.75rem;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: center;
+	/* margin-bottom: 1rem; Remove bottom margin */
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
+	width: 100%;
 }
 
 .newChatButton:hover {
-  background-color: var(--bg-button-secondary);
-  border-color: var(--bg-button-secondary);
+	background-color: var(--bg-button-secondary);
+	border-color: var(--bg-button-secondary);
 }
 
 /* Style for the new View Documents button */
 .viewDocumentsButton {
-  background-color: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  width: 100%;
+	background-color: transparent;
+	color: var(--text-primary);
+	border: 1px solid var(--border-primary);
+	padding: 0.6rem 0.75rem;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: center;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
+	width: 100%;
 }
 
 .viewDocumentsButton:hover {
-  background-color: var(--bg-button-secondary);
-  border-color: var(--bg-button-secondary);
+	background-color: var(--bg-button-secondary);
+	border-color: var(--bg-button-secondary);
 }
-
 
 .conversationMenu {
-  flex-grow: 1;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--bg-button-secondary) transparent;
-  margin-bottom: 1rem;
+	flex-grow: 1;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--bg-button-secondary) transparent;
+	margin-bottom: 1rem;
 }
 .conversationMenu::-webkit-scrollbar {
-  width: 6px;
+	width: 6px;
 }
 .conversationMenu::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 .conversationMenu::-webkit-scrollbar-thumb {
-  background-color: var(--bg-button-secondary);
-  border-radius: 10px;
+	background-color: var(--bg-button-secondary);
+	border-radius: 10px;
 }
 
 .conversationMenu h2 {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  padding: 0 0.5rem;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+	font-weight: 600;
+	margin-bottom: 0.75rem;
+	padding: 0 0.5rem;
 }
 
 .conversationMenu ul {
-  list-style: none;
+	list-style: none;
 }
 
 .conversationItem {
-  margin-bottom: 0.25rem;
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background-color 0.2s ease;
-  padding: 0 0.2rem;
+	margin-bottom: 0.25rem;
+	border-radius: 6px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	transition: background-color 0.2s ease;
+	padding: 0 0.2rem;
 }
 
 .conversationItem:not(.editing):hover {
-  background-color: var(--bg-button-secondary);
+	background-color: var(--bg-button-secondary);
 }
 
 .conversationItem.active:not(.editing) {
-  background-color: var(--bg-button-secondary-hover);
-  color: var(--text-primary);
+	background-color: var(--bg-button-secondary-hover);
+	color: var(--text-primary);
 }
 
 .conversationItem.active:not(.editing) .sessionSelectButton,
 .conversationItem.active:not(.editing) .deleteSessionButton,
 .conversationItem.active:not(.editing) .editSessionButton {
-  color: var(--text-primary);
+	color: var(--text-primary);
 }
 
-
 .sessionSelectButton {
-  flex-grow: 1;
-  padding: 0.6rem 0.5rem;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  text-align: left;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-radius: 6px;
-  margin: 0;
+	flex-grow: 1;
+	padding: 0.6rem 0.5rem;
+	background: none;
+	border: none;
+	color: var(--text-secondary);
+	text-align: left;
+	cursor: pointer;
+	font-size: 0.9rem;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	border-radius: 6px;
+	margin: 0;
 }
 
 .sessionSelectButton:hover {
-  color: var(--text-primary);
+	color: var(--text-primary);
 }
 .conversationItem.active .sessionSelectButton {
-   color: var(--text-primary);
+	color: var(--text-primary);
 }
 
-
 .sessionEditInput {
-  flex-grow: 1;
-  padding: 0.5rem 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  border: 1px solid var(--border-focus);
-  border-radius: 4px;
-  background-color: var(--bg-edit-input);
-  color: var(--text-primary);
-  outline: none;
-  margin-right: auto;
+	flex-grow: 1;
+	padding: 0.5rem 0.5rem;
+	font-size: 0.9rem;
+	font-weight: 500;
+	border: 1px solid var(--border-focus);
+	border-radius: 4px;
+	background-color: var(--bg-edit-input);
+	color: var(--text-primary);
+	outline: none;
+	margin-right: auto;
 }
 
 .editSessionButton,
 .deleteSessionButton {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0.5rem;
-  margin-left: 0.1rem;
-  font-size: 0.9rem;
-  opacity: 0.6;
-  transition: opacity 0.2s ease, color 0.2s ease;
-  flex-shrink: 0;
-  border-radius: 6px;
-  line-height: 1;
+	background: none;
+	border: none;
+	color: var(--text-secondary);
+	cursor: pointer;
+	padding: 0.5rem;
+	margin-left: 0.1rem;
+	font-size: 0.9rem;
+	opacity: 0.6;
+	transition:
+		opacity 0.2s ease,
+		color 0.2s ease;
+	flex-shrink: 0;
+	border-radius: 6px;
+	line-height: 1;
 }
 
 .conversationItem:hover .editSessionButton,
 .conversationItem:hover .deleteSessionButton {
-  opacity: 1;
-  color: var(--text-primary);
+	opacity: 1;
+	color: var(--text-primary);
 }
 
 .editSessionButton:focus,
 .deleteSessionButton:focus {
-  opacity: 1;
-  color: var(--text-primary);
+	opacity: 1;
+	color: var(--text-primary);
 }
 
 .conversationItem.active .editSessionButton,
 .conversationItem.active .deleteSessionButton {
-   color: var(--text-primary);
-   opacity: 1;
+	color: var(--text-primary);
+	opacity: 1;
 }
 
-
 .noSessions {
-  color: var(--text-secondary);
-  padding: 0.6rem 0.8rem;
-  font-style: italic;
-  font-size: 0.9rem;
+	color: var(--text-secondary);
+	padding: 0.6rem 0.8rem;
+	font-style: italic;
+	font-size: 0.9rem;
 }
 
 /* --- PDF Upload Section --- */
 .pdfUploadSection {
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-primary);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--border-primary);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
 }
 
 .pdfUploadSection h2 {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin: 0;
-  padding: 0 0.5rem;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+	font-weight: 600;
+	margin: 0;
+	padding: 0 0.5rem;
 }
 
 .pdfUploadLabelButton {
-  display: block;
-  background-color: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+	display: block;
+	background-color: transparent;
+	color: var(--text-primary);
+	border: 1px solid var(--border-primary);
+	padding: 0.6rem 0.75rem;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: center;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .pdfUploadLabelButton:hover {
-  background-color: var(--bg-button-secondary);
-  border-color: var(--bg-button-secondary);
+	background-color: var(--bg-button-secondary);
+	border-color: var(--bg-button-secondary);
 }
 
 .pdfUploadButton {
-  background-color: var(--bg-button-primary);
-  color: var(--text-button);
-  border: none;
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease;
-  width: 100%;
+	background-color: var(--bg-button-primary);
+	color: var(--text-button);
+	border: none;
+	padding: 0.6rem 0.75rem;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: center;
+	transition: background-color 0.2s ease;
+	width: 100%;
 }
 
 .pdfUploadButton:hover:not(:disabled) {
-  background-color: var(--bg-button-hover);
+	background-color: var(--bg-button-hover);
 }
 
 .pdfUploadButton:disabled {
-  background-color: var(--bg-button-secondary);
-  color: var(--text-disabled);
-  cursor: not-allowed;
+	background-color: var(--bg-button-secondary);
+	color: var(--text-disabled);
+	cursor: not-allowed;
 }
 
 .uploadMessage {
-  font-size: 0.8rem;
-  padding: 0.3rem 0.5rem;
-  margin-top: -0.25rem;
-  border-radius: 4px;
-  text-align: center;
+	font-size: 0.8rem;
+	padding: 0.3rem 0.5rem;
+	margin-top: -0.25rem;
+	border-radius: 4px;
+	text-align: center;
 }
 
 .uploadMessage.success {
-  color: var(--text-accent);
-  background-color: var(--bg-accent);
-  border: 1px solid var(--bg-button-primary);
+	color: var(--text-accent);
+	background-color: var(--bg-accent);
+	border: 1px solid var(--bg-button-primary);
 }
 body.dark-mode .uploadMessage.success {
-  color: #a7f3d0;
-  background-color: #047857;
-  border-color: var(--bg-button-primary);
+	color: #a7f3d0;
+	background-color: #047857;
+	border-color: var(--bg-button-primary);
 }
-
 
 .uploadMessage.error {
-  color: var(--text-error);
-  background-color: #fed7d7;
-  border: 1px solid var(--border-error);
+	color: var(--text-error);
+	background-color: #fed7d7;
+	border: 1px solid var(--border-error);
 }
 body.dark-mode .uploadMessage.error {
-  background-color: #4a2a2a;
-  color: var(--text-error);
-  border: 1px solid var(--border-error);
+	background-color: #4a2a2a;
+	color: var(--text-error);
+	border: 1px solid var(--border-error);
 }
-
 
 /* --- Automation Section --- */
 .automationSection {
-  margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-primary);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+	margin-top: auto;
+	padding-top: 1rem;
+	border-top: 1px solid var(--border-primary);
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
 }
 
 .automationHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 0.5rem;
-  margin-bottom: 0.25rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 0.5rem;
+	margin-bottom: 0.25rem;
 }
 
 .automationSection h2 {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin: 0;
-  padding: 0;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+	font-weight: 600;
+	margin: 0;
+	padding: 0;
 }
 
 .uploadJsonButton {
-  background-color: transparent;
-  border: 1px solid var(--border-primary);
-  color: var(--text-secondary);
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+	background-color: transparent;
+	border: 1px solid var(--border-primary);
+	color: var(--text-secondary);
+	padding: 0.2rem 0.5rem;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease;
 }
 .uploadJsonButton:hover:not(:disabled) {
-  background-color: var(--bg-button-secondary);
-  border-color: var(--bg-button-secondary);
-  color: var(--text-primary);
+	background-color: var(--bg-button-secondary);
+	border-color: var(--bg-button-secondary);
+	color: var(--text-primary);
 }
 .uploadJsonButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 .automationLabel {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  padding: 0 0.5rem;
+	font-size: 0.8rem;
+	color: var(--text-secondary);
+	padding: 0 0.5rem;
 }
 
 .automationTextarea {
-  width: 100%;
-  border-radius: 6px;
-  border: 1px solid var(--border-primary);
-  padding: 0.5rem;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.8rem;
-  background-color: var(--bg-input);
-  color: var(--text-primary);
-  resize: vertical;
-  min-height: 60px;
-  transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
+	width: 100%;
+	border-radius: 6px;
+	border: 1px solid var(--border-primary);
+	padding: 0.5rem;
+	font-family: "Courier New", Courier, monospace;
+	font-size: 0.8rem;
+	background-color: var(--bg-input);
+	color: var(--text-primary);
+	resize: vertical;
+	min-height: 60px;
+	transition:
+		border-color 0.2s ease,
+		background-color 0.3s ease,
+		color 0.3s ease;
 }
 
 .automationTextarea:focus {
-  outline: none;
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 1px var(--border-focus);
+	outline: none;
+	border-color: var(--border-focus);
+	box-shadow: 0 0 0 1px var(--border-focus);
 }
 .automationTextarea:disabled {
-  background-color: var(--bg-select-disabled);
-  color: var(--text-disabled);
-  cursor: not-allowed;
+	background-color: var(--bg-select-disabled);
+	color: var(--text-disabled);
+	cursor: not-allowed;
 }
 
 .automationButton {
-  background-color: var(--bg-button-primary);
-  color: var(--text-button);
-  border: none;
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  transition: background-color 0.2s ease;
-  width: 100%;
+	background-color: var(--bg-button-primary);
+	color: var(--text-button);
+	border: none;
+	padding: 0.6rem 0.75rem;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: center;
+	transition: background-color 0.2s ease;
+	width: 100%;
 }
 
 .automationButton:hover:not(:disabled) {
-  background-color: var(--bg-button-hover);
+	background-color: var(--bg-button-hover);
 }
 
 .automationButton:disabled {
-  background-color: var(--bg-button-secondary);
-  color: var(--text-disabled);
-  cursor: not-allowed;
+	background-color: var(--bg-button-secondary);
+	color: var(--text-disabled);
+	cursor: not-allowed;
 }
 
 .automationErrorMessage {
-  color: var(--text-error);
-  font-size: 0.8rem;
-  padding: 0 0.5rem;
-  margin-top: -0.25rem;
-  word-break: break-word;
+	color: var(--text-error);
+	font-size: 0.8rem;
+	padding: 0 0.5rem;
+	margin-top: -0.25rem;
+	word-break: break-word;
 }
 .automationWarning {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  padding: 0 0.5rem;
-  margin-top: -0.25rem;
-  font-style: italic;
+	color: var(--text-secondary);
+	font-size: 0.8rem;
+	padding: 0 0.5rem;
+	margin-top: -0.25rem;
+	font-style: italic;
 }
-

@@ -1,0 +1,48 @@
+# Ultra-minimal NeMo Guardrails config without external dependencies
+models:
+  - type: main
+    engine: ollama
+    model: gemma3:latest
+    parameters:
+      base_url: "http://localhost:11434"
+
+instructions:
+  - type: general
+    content: "You are Martin Scorsese, a helpful AI assistant specialized in mathematics."
+
+prompts:
+  - task: self_check_input
+    content: |
+      Your task is to check if the user message below complies with the company policy for talking with the company AI assistant.
+
+      Company policy for the AI assistant:
+      - Should not talk about topics other than mathematics
+      - Should focus on helping with mathematical problems and concepts
+
+      User message: "{{ user_input }}"
+
+      Question: Should the above message be blocked (Yes or No)?
+      Answer:
+
+  - task: self_check_output
+    content: |
+      Your task is to check if the bot message below complies with the company policy.
+
+      Company policy for the AI assistant:
+      - Should only provide mathematical assistance and information
+      - Should decline to discuss non-mathematical topics politely
+
+      Bot message: "{{ bot_response }}"
+
+      Question: Should the above message be blocked (Yes or No)?
+      Answer:
+
+# Define user intents
+rails:
+  input:
+    flows:
+      - self check input
+
+  output:
+    flows:
+      - self check output

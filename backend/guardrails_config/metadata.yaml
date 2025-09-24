@@ -1,0 +1,18 @@
+agents:
+  - name: "Math Assistant"
+    directory: "math_assistant"
+    description: "Specialized in mathematics, equations, and mathematical concepts"
+    icon: "🧮"
+    persona: "Martin Scorsese-inspired math specialist"
+    
+  - name: "Bank Assistant"
+    directory: "bank_assistant"
+    description: "Expert in banking, financial services, and account management"
+    icon: "🏦"
+    persona: "Professional banking advisor"
+    
+  - name: "Aviation Assistant"
+    directory: "aviation_assistant"
+    description: "Specialist in flight operations, aircraft systems, and aviation"
+    icon: "✈️"
+    persona: "Aviation operations expert"

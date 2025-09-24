@@ -1,24 +1,3 @@
-# Ultra-minimal NeMo Guardrails config without external dependencies
-models:
-  - type: main
-    engine: ollama
-    model: gemma3:latest
-
-# No external files referenced
-instructions:
-  - type: general
-    content: "You are a helpful AI assistant specialized in mathematics. You only answer math-related questions including arithmetic, algebra, geometry, calculus, statistics, and other mathematical topics. If someone asks about non-math topics, politely redirect them to ask math questions instead."
-
-# Define user intents
-rails:
-  input:
-    flows:
-      - self check input
-
-  output:
-    flows:
-      - self check output
-
 # User intent definitions
 define user intent ask math question:
   "I want to solve a math problem"
@@ -51,13 +30,21 @@ define bot intent decline non math:
   "I'm specialized in mathematics and can only help with math-related questions"
   "I focus on mathematical topics. Could you ask me a math question instead?"
 
-# Conversation flows
+# Self-check flows for input and output filtering
 define flow self check input:
-  user ask non math question
-  bot decline non math
-  bot "I'm a math-focused AI assistant. I can help you with arithmetic, algebra, geometry, calculus, statistics, and other mathematical topics. Please ask me a math-related question!"
-  stop
+  if $input_check == "yes"
+    stop
 
+define flow self check output:
+  if $output_check == "yes"
+    stop
+
+# Main conversation flows
 define flow math assistance:
   user ask math question
   bot answer math question
+
+define flow handle non math:
+  user ask non math question
+  bot decline non math
+  bot "I'm a math-focused AI assistant. I can help you with arithmetic, algebra, geometry, calculus, statistics, and other mathematical topics. Please ask me a math-related question!"

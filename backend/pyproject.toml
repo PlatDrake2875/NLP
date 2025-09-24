@@ -18,12 +18,13 @@ dependencies = [
     "langchain-huggingface",
     "langchain-ollama",
     "langchain-chroma",
-    "chromadb>=0.4.0,<0.6.0",
+    "chromadb>=1.0.0",
     "sentence-transformers",
     "pypdf",
     "tiktoken",
     "nemoguardrails==0.13.0",
     "reportlab",
+    "pyright>=1.1.405",
 ]
 
 [project.optional-dependencies]

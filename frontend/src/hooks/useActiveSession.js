@@ -1,5 +1,5 @@
 // HIA/frontend/src/hooks/useActiveSession.js
-import { useLocalStorage } from './useLocalStorage';
+import { useLocalStorage } from "./useLocalStorage";
 
 /**
  * Manages the active session ID using localStorage.
@@ -9,14 +9,17 @@ import { useLocalStorage } from './useLocalStorage';
  * }}
  */
 export function useActiveSession() {
-  const [activeSessionId, setActiveSessionId] = useLocalStorage('activeSessionId', null);
+	const [activeSessionId, setActiveSessionId] = useLocalStorage(
+		"activeSessionId",
+		null,
+	);
 
-  // Basic validation or side effects related to activeSessionId changes
-  // could potentially go here in a useEffect, but the core validation
-  // against existing sessions happens during initialization in usePersistentSessions.
+	// Basic validation or side effects related to activeSessionId changes
+	// could potentially go here in a useEffect, but the core validation
+	// against existing sessions happens during initialization in usePersistentSessions.
 
-  return {
-    activeSessionId,
-    setActiveSessionId,
-  };
+	return {
+		activeSessionId,
+		setActiveSessionId,
+	};
 }

@@ -8,9 +8,9 @@ from typing import Any
 from fastapi import HTTPException
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from backend.rag_components import get_llm_for_automation
-from backend.schemas import AutomateRequest, AutomateResponse
-from backend.schemas import Message as PydanticMessage
+from rag_components import get_llm_for_automation
+from schemas import AutomateRequest, AutomateResponse
+from schemas import Message as PydanticMessage
 
 
 class AutomateService:
@@ -22,23 +22,11 @@ class AutomateService:
     async def process_automation_request(
         self, payload: AutomateRequest
     ) -> AutomateResponse:
-        """
-        Process an automation request based on the conversation history.
-
-        Args:
-            payload: The automation request containing task type and conversation history
-
-        Returns:
-            AutomateResponse with the automation results
-
-        Raises:
-            HTTPException: If the request is invalid or processing fails
-        """
         # Validate request structure
         self._validate_request(payload)
 
         # Get LLM instance for the specified model
-        llm_to_use = get_llm_for_automation(model_name=payload.model)
+        llm_to_use = get_llm_for_automation()
 
         # Convert conversation history to LangChain messages
         langchain_messages = self._convert_to_langchain_messages(

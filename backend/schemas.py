@@ -215,6 +215,9 @@ class ChatRequest(BaseModel):
 
     query: str = Field(..., description="User's question or message")
     model: Optional[str] = Field(None, description="Model to use for the response")
+    agent_name: Optional[str] = Field(
+        None, description="Name of the NeMo Guardrails agent to use"
+    )
     history: Optional[list[HistoryMessage]] = Field(
         default=[], description="Previous conversation history"
     )
@@ -227,6 +230,7 @@ class ChatRequest(BaseModel):
             "example": {
                 "query": "What is the weather like today?",
                 "model": "gemma3:4b-it-q4_K_M",
+                "agent_name": "math_assistant",
                 "history": [
                     {"sender": "user", "text": "Hello"},
                     {"sender": "bot", "text": "Hi there! How can I help you?"},

@@ -10,7 +10,7 @@ from langchain_chroma import Chroma as LangchainChroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from backend.schemas import UploadResponse
+from schemas import UploadResponse
 
 
 class UploadService:
@@ -25,19 +25,6 @@ class UploadService:
     async def process_document_upload(
         self, file: UploadFile, vectorstore: LangchainChroma
     ) -> UploadResponse:
-        """
-        Process an uploaded document and add it to the vector store.
-
-        Args:
-            file: The uploaded file
-            vectorstore: The vector store instance to add documents to
-
-        Returns:
-            UploadResponse with processing results
-
-        Raises:
-            HTTPException: If processing fails at any stage
-        """
         if not file.filename:
             raise HTTPException(status_code=400, detail="No filename provided")
 

@@ -10,15 +10,15 @@ from typing import Optional
 
 import httpx
 
-from backend.config import (
+from config import (
     NEMO_GUARDRAILS_SERVER_URL,
     OLLAMA_BASE_URL,
     OLLAMA_MODEL_FOR_RAG,
     RAG_ENABLED,
     USE_GUARDRAILS,
 )
-from backend.nemo_guardrails_local import get_local_nemo_instance
-from backend.rag_components import get_rag_context_prefix
+from rag_components import get_rag_context_prefix
+from services.nemo import get_local_nemo_instance
 
 
 class ChatService:
@@ -35,21 +35,10 @@ class ChatService:
         self,
         query: str,
         model_name: Optional[str] = None,
+        agent_name: Optional[str] = None,
         history: Optional[list[dict]] = None,
         use_rag: Optional[bool] = None,
     ) -> AsyncGenerator[str, None]:
-        """
-        Process a chat request and return a streaming response.
-
-        Args:
-            query: The user's question/message
-            model_name: The model to use (defaults to configured model)
-            history: Previous conversation history
-            use_rag: Whether to use RAG for this request (defaults to global config)
-
-        Yields:
-            SSE-formatted chunks of the response
-        """
         if history is None:
             history = []
         if use_rag is None:
@@ -68,6 +57,7 @@ class ChatService:
                 messages_for_llm=messages_for_llm,
                 stream_id=stream_id,
                 model_name=effective_model_name,
+                agent_name=agent_name,
             ):
                 yield chunk
         else:
@@ -161,10 +151,14 @@ class ChatService:
         yield f"data: {json.dumps({'status': 'done'})}\n\n"
 
     async def _local_nemo_guardrails_stream(
-        self, messages_for_llm: list[dict], stream_id: str, model_name: str
+        self,
+        messages_for_llm: list[dict],
+        stream_id: str,
+        model_name: str,
+        agent_name: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """Stream chat completion using local NeMo Guardrails integration."""
-        nemo_instance = await get_local_nemo_instance()
+        nemo_instance = await get_local_nemo_instance(agent_name)
 
         if not nemo_instance.is_available():
             error_msg = "Local NeMo Guardrails instance not properly initialized"
