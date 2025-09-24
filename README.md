@@ -13,7 +13,7 @@ A full-stack web application for testing **NVIDIA NeMo Guardrails** with **Ollam
 - [Usage](#usage)
 - [Guardrails Configuration](#guardrails-configuration)
 
----
+
 ## Overview
 
 This application consists of:
@@ -21,7 +21,7 @@ This application consists of:
 - **Frontend**: React-based chat interface with agent selection
 - **Vector Database**: ChromaDB for document storage and retrieval
 - **LLM Provider**: Ollama for local language model inference
----
+
 ## Features
 
 - 🛡️ **Guardrails Testing**: Pre-configured guardrails for different domains
@@ -30,7 +30,7 @@ This application consists of:
 - 📄 **Document Upload**: PDF upload and processing for RAG
 - 🔄 **Session Management**: Persistent chat sessions with local storage
 - 🎨 **Modern UI**: Dark/light theme support with responsive design
----
+
 ## Prerequisites
 
 Make sure you have the following installed:
@@ -51,7 +51,7 @@ Make sure you have the following installed:
    ollama pull mistral
    # or any other model you prefer
    ```
----
+
 ## Quick Start
 
 ### Option 1: Full Stack (Recommended)
@@ -79,7 +79,7 @@ This will:
    ```powershell
    .\dev.ps1 up-ui
    ```
----
+
 ## Development Commands
 
 Use the provided PowerShell script for common development tasks:
@@ -103,7 +103,7 @@ Use the provided PowerShell script for common development tasks:
 # Testing
 .\dev.ps1 test            # Run backend tests
 ```
----
+
 ## Manual Setup
 
 If you prefer to run services manually:
@@ -126,7 +126,7 @@ npm run dev               # Start development server
 ```powershell
 docker run -p 8001:8000 chromadb/chroma:latest
 ```
----
+
 ## Usage
 
 1. **Access the application**: Open http://localhost:5173 in your browser
@@ -141,7 +141,7 @@ docker run -p 8001:8000 chromadb/chroma:latest
 4. **Start Chatting**: The guardrails will automatically filter and guide responses based on your selected agent
 
 5. **Upload Documents**: Use the PDF upload feature to add context for RAG-based responses
----
+
 ## Guardrails Configuration
 
 The application includes pre-configured guardrails in `backend/guardrails_config/`:
