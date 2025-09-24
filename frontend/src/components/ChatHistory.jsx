@@ -1,5 +1,5 @@
 // HIA/frontend/src/components/ChatHistory.jsx
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import styles from "./ChatHistory.module.css"; // Import CSS Module
 import { MarkdownMessage } from "./MarkdownMessage"; // Keep MarkdownMessage separate
 
@@ -36,7 +36,7 @@ export const ChatHistory = ({ chatHistory }) => {
 				block: "end",
 			}); // Use auto for initial load
 		}
-	}, [chatHistory]); // Scroll when history changes
+	}, []); // Scroll when history changes
 
 	return (
 		// Apply styles using the imported object

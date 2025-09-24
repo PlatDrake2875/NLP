@@ -48,7 +48,7 @@ export function useChatSessions(apiBaseUrl) {
 	const handleSelectSession = useCallback(
 		(sessionId) => {
 			// Basic check if ID exists before setting active
-			if (sessions && sessions[sessionId]) {
+			if (sessions?.[sessionId]) {
 				setActiveSessionId(sessionId);
 				setAutomationError(null);
 			} else {

@@ -1,5 +1,3 @@
-// HIA/frontend/src/components/Header.jsx
-import React from "react";
 import styles from "./Header.module.css"; // Import CSS Module
 
 export function Header({

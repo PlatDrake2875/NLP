@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function useLocalStorage(key, initialValue) {
 	const [storedValue, setStoredValue] = useState(() => {
@@ -6,21 +6,22 @@ export function useLocalStorage(key, initialValue) {
 			const item = window.localStorage.getItem(key);
 			return item ? JSON.parse(item) : initialValue;
 		} catch (error) {
-			console.error("Error reading localStorage key “" + key + "”:", error);
+			console.error(`Error reading localStorage key "${key}":`, error);
 			return initialValue;
 		}
 	});
 
-	const setValue = (value) => {
+	const setValue = useCallback((value) => {
 		try {
-			const valueToStore =
-				value instanceof Function ? value(storedValue) : value;
-			setStoredValue(valueToStore);
-			window.localStorage.setItem(key, JSON.stringify(valueToStore));
+			setStoredValue((prevValue) => {
+				const valueToStore = value instanceof Function ? value(prevValue) : value;
+				window.localStorage.setItem(key, JSON.stringify(valueToStore));
+				return valueToStore;
+			});
 		} catch (error) {
-			console.error("Error setting localStorage key “" + key + "”:", error);
+			console.error(`Error setting localStorage key "${key}":`, error);
 		}
-	};
+	}, [key]);
 
 	// Optional: Listen for storage changes from other tabs/windows
 	useEffect(() => {

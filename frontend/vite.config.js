@@ -6,11 +6,11 @@ export default defineConfig({
 	plugins: [react()],
 	server: {
 		proxy: {
-			'/api': {
-				target: 'http://host.docker.internal:8000',
+			"/api": {
+				target: "http://host.docker.internal:8000",
 				changeOrigin: true,
 				secure: false,
-			}
-		}
-	}
+			},
+		},
+	},
 });

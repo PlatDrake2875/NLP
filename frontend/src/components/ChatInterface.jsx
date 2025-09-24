@@ -1,5 +1,5 @@
 // HIA/frontend/src/components/ChatInterface.jsx
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { ChatForm } from "./ChatForm";
 import { ChatHistory } from "./ChatHistory";
 import styles from "./ChatInterface.module.css"; // Import CSS Module

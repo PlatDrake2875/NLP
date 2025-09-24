@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const generateNewSessionId = (counter) => `new-chat-${counter}`;
 
 // Helper function to format session names (used as fallback)
-const formatSessionIdFallback = (sessionId) => {
+const _formatSessionIdFallback = (sessionId) => {
 	if (!sessionId) return "Chat";
 	return sessionId.replace(/-/g, " ").replace(/^./, (str) => str.toUpperCase());
 };
@@ -64,7 +64,7 @@ export function usePersistentSessions(
 							};
 							if (id.startsWith("new-chat-")) {
 								const num = parseInt(id.replace("new-chat-", ""), 10);
-								if (!isNaN(num) && num > maxNum) maxNum = num;
+								if (!Number.isNaN(num) && num > maxNum) maxNum = num;
 							}
 							return acc;
 						},
@@ -126,7 +126,7 @@ export function usePersistentSessions(
 		);
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []); // Run only ONCE on mount
+	}, [initialActiveId, setActiveSessionIdDirectly]); // Run only ONCE on mount
 
 	// --- Effect 2: Save sessions to localStorage whenever they change (AFTER init) ---
 	useEffect(() => {

@@ -85,10 +85,10 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 						"Content-Type": "application/json",
 						Accept: "text/event-stream",
 					},
-					body: JSON.stringify({ 
-						query, 
+					body: JSON.stringify({
+						query,
 						model,
-						...(agent && { agent_name: agent }) // Include agent_name only if agent is provided
+						...(agent && { agent_name: agent }), // Include agent_name only if agent is provided
 					}),
 				});
 
@@ -97,7 +97,7 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 					try {
 						const errorData = await response.text();
 						errorDetail = `${errorDetail}: ${errorData.substring(0, 150)}`;
-					} catch (e) {}
+					} catch (_e) {}
 					throw new Error(errorDetail);
 				}
 
@@ -137,12 +137,7 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 										if (parsedData.token) {
 											// Old format: direct token
 											contentToAdd = parsedData.token;
-										} else if (
-											parsedData.choices &&
-											parsedData.choices[0] &&
-											parsedData.choices[0].delta &&
-											parsedData.choices[0].delta.content
-										) {
+										} else if (parsedData.choices?.[0]?.delta?.content) {
 											// OpenAI ChatCompletion format
 											contentToAdd = parsedData.choices[0].delta.content;
 										} else if (
@@ -326,11 +321,11 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 					try {
 						const errorData = await response.json(); // FastAPI 422 errors are JSON
 						errorDetail = `${errorDetail}: ${JSON.stringify(errorData.detail || errorData)}`;
-					} catch (e) {
+					} catch (_e) {
 						try {
 							const textError = await response.text();
 							errorDetail = `${errorDetail}: ${textError.substring(0, 200)}`;
-						} catch (e2) {}
+						} catch (_e2) {}
 					}
 					throw new Error(errorDetail);
 				}

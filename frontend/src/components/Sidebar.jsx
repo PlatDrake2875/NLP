@@ -1,7 +1,7 @@
 // HIA/frontend/src/components/Sidebar.jsx
 
 import PropTypes from "prop-types"; // Import PropTypes
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./Sidebar.module.css"; // Import CSS Module
 
 // Helper function (keep local or move to utils)
@@ -298,7 +298,6 @@ export function Sidebar({
 						onChange={handleJsonFileChange}
 						accept=".json,application/json"
 						style={{ display: "none" }}
-						aria-hidden="true"
 					/>
 					<button
 						onClick={handleUploadJsonClick}

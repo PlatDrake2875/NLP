@@ -1,5 +1,5 @@
 // HIA/frontend/src/components/ChatForm.jsx
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./ChatForm.module.css"; // Import CSS Module
 
 export function ChatForm({ onSubmit, disabled }) {
@@ -15,7 +15,7 @@ export function ChatForm({ onSubmit, disabled }) {
 			// Consider max-height defined in CSS module
 			textarea.style.height = `${scrollHeight}px`;
 		}
-	}, [query]);
+	}, []);
 
 	const handleKeyDown = (e) => {
 		if (e.key === "Enter" && !e.shiftKey) {
@@ -74,7 +74,9 @@ export function ChatForm({ onSubmit, disabled }) {
 					viewBox="0 0 24 24"
 					fill="none"
 					xmlns="http://www.w3.org/2000/svg"
+					aria-label="Send message"
 				>
+					<title>Send message</title>
 					<path
 						d="M7 11L12 6L17 11M12 18V7"
 						stroke="currentColor"

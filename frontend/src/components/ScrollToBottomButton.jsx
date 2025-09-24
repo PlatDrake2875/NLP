@@ -1,5 +1,5 @@
 // HIA/frontend/src/components/ScrollToBottomButton.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./ScrollToBottomButton.module.css"; // Import CSS Module
 
 export const ScrollToBottomButton = ({ containerRef, targetRef }) => {

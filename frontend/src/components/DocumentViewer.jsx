@@ -1,5 +1,5 @@
 // src/components/DocumentViewer.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./DocumentViewer.module.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -22,7 +22,7 @@ export function DocumentViewer({ onBackToChat }) {
 					try {
 						const errorData = await response.json();
 						errorDetail = errorData.detail || errorDetail;
-					} catch (e) {
+					} catch (_e) {
 						/* Ignore */
 					}
 					throw new Error(errorDetail);

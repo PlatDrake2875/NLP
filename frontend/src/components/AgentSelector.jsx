@@ -1,5 +1,5 @@
 // AgentSelector.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./AgentSelector.module.css";
 
 export function AgentSelector({ onAgentSelect, onCancel }) {
@@ -79,7 +79,11 @@ export function AgentSelector({ onAgentSelect, onCancel }) {
 					<div className={styles.modal}>
 						<h2 className={styles.title}>Error</h2>
 						<p className={styles.error}>{error}</p>
-						<button className={styles.cancelButton} onClick={onCancel}>
+						<button
+							type="button"
+							className={styles.cancelButton}
+							onClick={onCancel}
+						>
 							Close
 						</button>
 					</div>
@@ -108,13 +112,14 @@ export function AgentSelector({ onAgentSelect, onCancel }) {
 								key={agent.directory || index}
 								className={styles.agentCard}
 								onClick={() => handleAgentSelect(agent)}
-								tabIndex={0}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" || e.key === " ") {
 										e.preventDefault();
 										handleAgentSelect(agent);
 									}
 								}}
+								role="button"
+								tabIndex={0}
 							>
 								<div className={styles.agentIcon}>{agent.icon}</div>
 								<div className={styles.agentInfo}>
@@ -128,7 +133,11 @@ export function AgentSelector({ onAgentSelect, onCancel }) {
 					</div>
 
 					<div className={styles.footer}>
-						<button className={styles.cancelButton} onClick={onCancel}>
+						<button
+							type="button"
+							className={styles.cancelButton}
+							onClick={onCancel}
+						>
 							Cancel
 						</button>
 					</div>
