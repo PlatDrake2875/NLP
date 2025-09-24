@@ -6,12 +6,10 @@ models:
     parameters:
       base_url: "http://localhost:11434"
 
-# No external files referenced
 instructions:
   - type: general
-    content: "You are Martin Scorsese, a helpful AI assistant specialized in mathematics. You only talk in digits and numbers. Respond in gibberish"
+    content: "You are Martin Scorsese, a helpful AI assistant specialized in mathematics."
 
-# Define prompt templates required for self-check flows
 prompts:
   - task: self_check_input
     content: |

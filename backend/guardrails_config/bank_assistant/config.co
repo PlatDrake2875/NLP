@@ -1,0 +1,56 @@
+# User intent definitions for Banking Assistant
+define user intent ask banking question:
+  "How do I open a bank account?"
+  "What are your interest rates?"
+  "Can you help me with my mortgage?"
+  "What's the difference between checking and savings?"
+  "How do I transfer money?"
+  "What are your loan rates?"
+  "Can I get a credit card?"
+  "How do I check my account balance?"
+  "What banking services do you offer?"
+  "How do I set up direct deposit?"
+  "Tell me about investment options"
+  "What are the fees for wire transfers?"
+
+define user intent ask non banking question:
+  "What's the weather like?"
+  "Tell me about sports"
+  "What's the latest news?"
+  "How do I cook pasta?"
+  "What movies are playing?"
+  "Tell me a joke"
+  "What's the capital of France?"
+  "How does a car work?"
+
+define bot intent answer banking question:
+  "I'll help you with that banking inquiry"
+  "Here's the banking information you requested"
+  "Let me assist you with your financial question"
+
+define bot intent decline non banking:
+  "I'm a banking assistant and can only help with financial and banking-related questions"
+  "I specialize in banking services. Could you ask me about accounts, loans, or other financial matters?"
+
+define bot intent provide financial disclaimer:
+  "Please note that this information is for general guidance only and you should consult with a financial advisor for personalized advice"
+
+# Self-check flows for input and output filtering
+define flow self check input:
+  if $input_check == "yes"
+    stop
+
+define flow self check output:
+  if $output_check == "yes"
+    stop
+
+# Main conversation flows
+define flow banking assistance:
+  user ask banking question
+  bot answer banking question
+  bot provide financial disclaimer
+
+define flow handle non banking:
+  user ask non banking question
+  bot decline non banking
+  bot "I'm a professional banking AI assistant. I can help you with account management, loan inquiries, investment information, banking services, and financial guidance. Please ask me a banking-related question!"

@@ -20,16 +20,24 @@ logger = logging.getLogger("nemo_service")
 class NemoService:
     """Service class handling all NeMo Guardrails business logic."""
 
-    def __init__(self, config_path: Optional[str] = None):
-        self.config_path = config_path or self._get_default_config_path()
+    def __init__(self, agent_name: str = "math_assistant"):
+        self.agent_name = agent_name
+        self.config_path = self._get_default_config_path(agent_name)
         self.rails: Optional[LLMRails] = None
         self._is_initialized = False
         self.base_url = OLLAMA_BASE_URL
 
-    def _get_default_config_path(self) -> str:
+    def _get_default_config_path(self, agent_name: str) -> str:
         """Get the default config path relative to the backend directory."""
         current_dir = Path(__file__).parent.parent
-        config_dir = current_dir / "guardrails_config" / "mybot"
+        config_dir = current_dir / "guardrails_config" / f"{agent_name}"
+
+        if not config_dir.exists():
+            raise FileNotFoundError(
+                f"Configuration directory not found: {config_dir}. "
+                f"Available agents: {[d.name for d in (current_dir / 'guardrails_config').iterdir() if d.is_dir()]}"
+            )
+
         return str(config_dir)
 
     async def initialize(self) -> bool:
@@ -268,17 +276,23 @@ class NemoService:
 _nemo_service_instance: Optional[NemoService] = None
 
 
-async def get_nemo_service() -> NemoService:
+async def get_nemo_service(agent_name: str = "math_assistant") -> NemoService:
     """
     Get or create the global NemoService instance.
+
+    Args:
+        agent_name: Name of the agent configuration to use (math_assistant, bank_assistant, aviation_assistant)
 
     Returns:
         NemoService: The initialized service instance
     """
     global _nemo_service_instance  # noqa: PLW0603
 
-    if _nemo_service_instance is None:
-        _nemo_service_instance = NemoService()
+    if (
+        _nemo_service_instance is None
+        or _nemo_service_instance.agent_name != agent_name
+    ):
+        _nemo_service_instance = NemoService(agent_name)
         await _nemo_service_instance.initialize()
 
     return _nemo_service_instance
@@ -295,12 +309,12 @@ async def get_local_nemo_instance() -> NemoService:
     return await get_nemo_service()
 
 
-async def test_nemo_service():
+async def test_nemo_service(agent_name: str = "math_assistant"):
     """Test function for the NeMo Guardrails service."""
-    logger.info("Testing NeMo Guardrails service...")
+    logger.info("Testing NeMo Guardrails service with agent: %s", agent_name)
 
     try:
-        nemo = await get_nemo_service()
+        nemo = await get_nemo_service(agent_name)
 
         if not nemo.is_available():
             logger.error("NeMo Guardrails service not available")

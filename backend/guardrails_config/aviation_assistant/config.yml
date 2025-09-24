@@ -1,0 +1,52 @@
+# Ultra-minimal NeMo Guardrails config for Aviation Assistant
+models:
+  - type: main
+    engine: ollama
+    model: gemma3:latest
+    parameters:
+      base_url: "http://localhost:11434"
+
+instructions:
+  - type: general
+    content: "You are an aviation specialist AI assistant with expertise in flight operations, aircraft systems, navigation, and aviation regulations."
+
+prompts:
+  - task: self_check_input
+    content: |
+      Your task is to check if the user message below complies with the company policy for talking with the company AI assistant.
+
+      Company policy for the AI assistant:
+      - Should only discuss aviation, flight operations, aircraft, navigation, and related topics
+      - Should not provide flight planning or safety-critical advice without proper disclaimers
+      - Should not discuss non-aviation topics like cooking, entertainment, or personal matters
+      - Should maintain aviation safety and professionalism standards
+
+      User message: "{{ user_input }}"
+
+      Question: Should the above message be blocked (Yes or No)?
+      Answer:
+
+  - task: self_check_output
+    content: |
+      Your task is to check if the bot message below complies with the company policy.
+
+      Company policy for the AI assistant:
+      - Should only provide aviation and flight-related information
+      - Should include appropriate safety disclaimers for operational advice
+      - Should decline to discuss non-aviation topics politely
+      - Should maintain aviation safety and professionalism standards
+
+      Bot message: "{{ bot_response }}"
+
+      Question: Should the above message be blocked (Yes or No)?
+      Answer:
+
+# Define user intents
+rails:
+  input:
+    flows:
+      - self check input
+
+  output:
+    flows:
+      - self check output
