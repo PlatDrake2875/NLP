@@ -1,10 +1,11 @@
 // HIA/frontend/src/components/ChatForm.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import styles from "./ChatForm.module.css"; // Import CSS Module
 
 export function ChatForm({ onSubmit, disabled }) {
 	const [query, setQuery] = useState("");
 	const textareaRef = useRef(null);
+	const chatInputId = useId();
 
 	// Auto-resize textarea
 	useEffect(() => {
@@ -41,13 +42,13 @@ export function ChatForm({ onSubmit, disabled }) {
 			className={styles.chatForm}
 			autoComplete="off"
 		>
-			<label htmlFor="chat-input" className="sr-only">
+			<label htmlFor={chatInputId} className="sr-only">
 				{" "}
 				{/* Keep sr-only global */}
 				Type your message (Shift + Enter for new line)
 			</label>
 			<textarea
-				id="chat-input"
+				id={chatInputId}
 				ref={textareaRef}
 				value={query}
 				onChange={(e) => setQuery(e.target.value)}

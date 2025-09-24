@@ -158,12 +158,12 @@ function App() {
 		// For now, just hide the selector
 	}, []);
 
-	const formatSessionIdFallback = (sessionId) => {
+	const formatSessionIdFallback = useCallback((sessionId) => {
 		if (!sessionId) return "Chat";
 		return sessionId
 			.replace(/-/g, " ")
 			.replace(/^./, (str) => str.toUpperCase());
-	};
+	}, []);
 
 	const activeSessionName = useMemo(() => {
 		if (

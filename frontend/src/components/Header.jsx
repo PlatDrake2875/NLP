@@ -1,3 +1,4 @@
+import { useId } from "react";
 import styles from "./Header.module.css"; // Import CSS Module
 
 export function Header({
@@ -14,6 +15,7 @@ export function Header({
 	modelsLoading,
 	modelsError,
 }) {
+	const modelSelectId = useId();
 	// Use the passed name directly, provide a fallback if needed
 	const title = activeSessionName || "Chat";
 	const isHistoryEmpty =
@@ -28,12 +30,12 @@ export function Header({
 
 			<div className={styles.headerControls}>
 				<div className={styles.modelSelectorContainer}>
-					<label htmlFor="model-select" className="sr-only">
+					<label htmlFor={modelSelectId} className="sr-only">
 						Select Model:
 					</label>{" "}
 					{/* Keep sr-only global */}
 					<select
-						id="model-select"
+						id={modelSelectId}
 						value={selectedModel}
 						onChange={onModelChange}
 						disabled={
@@ -70,6 +72,7 @@ export function Header({
 				{/* Use headerActions style for the container */}
 				<div className={styles.headerActions}>
 					<button
+						type="button"
 						onClick={toggleTheme}
 						// className={styles.themeToggleBtn} // Can target via parent or add specific class
 						aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
@@ -79,6 +82,7 @@ export function Header({
 						{isDarkMode ? "☀️" : "🌙"}
 					</button>
 					<button
+						type="button"
 						onClick={clearChatHistory}
 						// className={styles.clearHistoryBtn}
 						disabled={disabled || isHistoryEmpty}
@@ -88,6 +92,7 @@ export function Header({
 						🗑️
 					</button>
 					<button
+						type="button"
 						onClick={downloadChatHistory}
 						// className={styles.downloadHistoryBtn}
 						disabled={disabled || isHistoryEmpty}

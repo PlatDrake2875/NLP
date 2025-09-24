@@ -22,7 +22,6 @@ export function ChatInterface({
 	modelsLoading,
 	modelsError,
 	isInitialized, // Receive initialization status
-	showAgentSelector, // New prop for agent selector visibility
 	sessionAgents, // New prop mapping sessionId to selected agent
 }) {
 	const chatContainerRef = useRef(null);

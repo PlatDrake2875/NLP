@@ -108,18 +108,11 @@ export function AgentSelector({ onAgentSelect, onCancel }) {
 
 					<div className={styles.agentList}>
 						{agents.map((agent, index) => (
-							<div
+							<button
 								key={agent.directory || index}
+								type="button"
 								className={styles.agentCard}
 								onClick={() => handleAgentSelect(agent)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.preventDefault();
-										handleAgentSelect(agent);
-									}
-								}}
-								role="button"
-								tabIndex={0}
 							>
 								<div className={styles.agentIcon}>{agent.icon}</div>
 								<div className={styles.agentInfo}>
@@ -128,7 +121,7 @@ export function AgentSelector({ onAgentSelect, onCancel }) {
 									<p className={styles.agentPersona}>{agent.persona}</p>
 								</div>
 								<div className={styles.selectIndicator}>→</div>
-							</div>
+							</button>
 						))}
 					</div>
 

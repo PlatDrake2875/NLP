@@ -44,13 +44,13 @@ export const ScrollToBottomButton = ({ containerRef, targetRef }) => {
 		// Apply styles using the imported object
 		<div className={styles.scrollToBottomContainer}>
 			<button
+				type="button"
 				onClick={scrollToBottom}
 				className={styles.scrollToBottomButton} // Use module style
 				aria-label="Scroll to bottom"
 			>
 				<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-					{" "}
-					{/* Changed fill */}
+					<title>Scroll to bottom</title> {/* Changed fill */}
 					<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
 				</svg>
 			</button>

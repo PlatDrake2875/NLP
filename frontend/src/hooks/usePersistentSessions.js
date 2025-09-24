@@ -31,6 +31,12 @@ export function usePersistentSessions(
 	const [sessions, setSessions] = useState({});
 	const [isInitialized, setIsInitialized] = useState(false);
 	const sessionCounterRef = useRef(1);
+	const setActiveSessionIdRef = useRef(setActiveSessionIdDirectly);
+	
+	// Update ref when the function changes
+	useEffect(() => {
+		setActiveSessionIdRef.current = setActiveSessionIdDirectly;
+	}, [setActiveSessionIdDirectly]);
 
 	// --- Effect 1: Load from localStorage and Initialize ONCE on mount ---
 	useEffect(() => {
@@ -117,7 +123,7 @@ export function usePersistentSessions(
 		setSessions(loadedSessions); // Update sessions state
 		// Crucially, update the activeSessionId state via the passed setter *after* potential correction
 		if (activeIdToSet !== initialActiveId) {
-			setActiveSessionIdDirectly(activeIdToSet);
+			setActiveSessionIdRef.current(activeIdToSet);
 		}
 		setIsInitialized(true); // Mark initialization complete
 		console.log(
@@ -126,7 +132,7 @@ export function usePersistentSessions(
 		);
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [initialActiveId, setActiveSessionIdDirectly]); // Run only ONCE on mount
+	}, [initialActiveId]); // Remove setActiveSessionIdDirectly from dependencies
 
 	// --- Effect 2: Save sessions to localStorage whenever they change (AFTER init) ---
 	useEffect(() => {
