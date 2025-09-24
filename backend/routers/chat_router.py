@@ -43,6 +43,7 @@ async def chat_endpoint(
     generator = chat_service.process_chat_request(
         query=request.query,
         model_name=request.model,
+        agent_name=request.agent_name,
         history=history_dicts,
         use_rag=request.use_rag,
     )

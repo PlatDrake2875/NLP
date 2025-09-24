@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from rag_components import setup_rag_components
 from routers import (
+    agents_router,
     automate_router,
     chat_router,
     document_router,
@@ -55,6 +56,7 @@ async def read_root():
 
 
 app.include_router(health_router.router)
+app.include_router(agents_router.router)
 app.include_router(chat_router.router, prefix="/api", tags=["Chat Endpoints"])
 app.include_router(model_router.router, prefix="/api", tags=["Model Endpoints"])
 app.include_router(document_router.router, prefix="/api", tags=["Document Endpoints"])

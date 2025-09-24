@@ -22,6 +22,8 @@ export function ChatInterface({
 	modelsLoading,
 	modelsError,
 	isInitialized, // Receive initialization status
+	showAgentSelector, // New prop for agent selector visibility
+	sessionAgents, // New prop mapping sessionId to selected agent
 }) {
 	const chatContainerRef = useRef(null);
 	const bottomOfChatRef = useRef(null); // Ref for scroll-to-bottom button logic
@@ -63,7 +65,16 @@ export function ChatInterface({
 						<p>Loading sessions...</p>
 					</div>
 				) : activeSessionId ? (
-					<ChatHistory chatHistory={chatHistory} />
+					// Check if this session has an agent selected
+					sessionAgents[activeSessionId] ? (
+						<ChatHistory chatHistory={chatHistory} />
+					) : (
+						<div className={styles.noChatSelected}>
+							{" "}
+							{/* Use module style */}
+							<p>Please select an AI assistant to start chatting...</p>
+						</div>
+					)
 				) : (
 					<div className={styles.noChatSelected}>
 						{" "}
@@ -75,8 +86,8 @@ export function ChatInterface({
 				<div ref={bottomOfChatRef} style={{ height: "1px" }} />
 			</div>
 
-			{/* Conditionally render input area only if initialized and a chat is selected */}
-			{isInitialized && activeSessionId && (
+			{/* Conditionally render input area only if initialized, chat is selected, and agent is selected */}
+			{isInitialized && activeSessionId && sessionAgents[activeSessionId] && (
 				// Use chatInputArea style
 				<div className={styles.chatInputArea}>
 					<ChatForm
@@ -86,8 +97,8 @@ export function ChatInterface({
 				</div>
 			)}
 
-			{/* Only show scroll button if initialized and there's an active chat */}
-			{isInitialized && activeSessionId && (
+			{/* Only show scroll button if initialized, there's an active chat, and agent is selected */}
+			{isInitialized && activeSessionId && sessionAgents[activeSessionId] && (
 				<ScrollToBottomButton
 					containerRef={chatContainerRef}
 					targetRef={bottomOfChatRef}

@@ -299,14 +299,17 @@ async def get_nemo_service(agent_name: str = "math_assistant") -> NemoService:
 
 
 # Legacy function name for backward compatibility
-async def get_local_nemo_instance() -> NemoService:
+async def get_local_nemo_instance(agent_name: str = "math_assistant") -> NemoService:
     """
     Legacy function name for backward compatibility.
+
+    Args:
+        agent_name: Name of the agent configuration to use
 
     Returns:
         NemoService: The initialized service instance
     """
-    return await get_nemo_service()
+    return await get_nemo_service(agent_name)
 
 
 async def test_nemo_service(agent_name: str = "math_assistant"):

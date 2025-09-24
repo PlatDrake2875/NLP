@@ -5,6 +5,7 @@ import "./index.css";
 
 import { ChatInterface } from "./components/ChatInterface";
 import { DocumentViewer } from "./components/DocumentViewer"; // Import the new component
+import { AgentSelector } from "./components/AgentSelector";
 
 // Import components
 import { Sidebar } from "./components/Sidebar";
@@ -39,6 +40,10 @@ function App() {
 	const [modelsError, setModelsError] = useState(null);
 	const [isUploadingPdf, setIsUploadingPdf] = useState(false);
 	const [pdfUploadStatus, setPdfUploadStatus] = useState(null);
+
+	// Agent selector state
+	const [showAgentSelector, setShowAgentSelector] = useState(false);
+	const [sessionAgents, setSessionAgents] = useState({}); // Maps sessionId to agent
 
 	// --- State for View Management ---
 	const [currentView, setCurrentView] = useState("chat"); // 'chat' or 'documents'
@@ -106,10 +111,47 @@ function App() {
 				console.error("No model selected. Cannot submit chat.");
 				return;
 			}
-			await originalHandleChatSubmit(query, selectedModel);
+			
+			// Get the selected agent for the current session
+			const selectedAgent = sessionAgents[activeSessionId];
+			if (!selectedAgent) {
+				console.error("No agent selected for this session. Cannot submit chat.");
+				return;
+			}
+			
+			// Pass the query, model, and agent to the chat API
+			await originalHandleChatSubmit(query, selectedModel, selectedAgent);
 		},
-		[selectedModel, originalHandleChatSubmit],
+		[selectedModel, originalHandleChatSubmit, sessionAgents, activeSessionId],
 	);
+
+	// Custom new chat handler that shows agent selector first
+	const handleNewChatWithAgent = useCallback(() => {
+		// Create a new chat session first
+		const newSessionId = handleNewChat();
+		// Show agent selector for this new session
+		setShowAgentSelector(true);
+		// The original session will be active but won't have an agent yet
+	}, [handleNewChat, setShowAgentSelector]);
+
+	// Handle agent selection from the selector
+	const handleAgentSelect = useCallback((agentDirectory) => {
+		if (activeSessionId) {
+			// Store the selected agent for this session
+			setSessionAgents(prev => ({
+				...prev,
+				[activeSessionId]: agentDirectory
+			}));
+		}
+		setShowAgentSelector(false);
+	}, [activeSessionId, setSessionAgents, setShowAgentSelector]);
+
+	// Handle agent selector cancellation
+	const handleAgentCancel = useCallback(() => {
+		setShowAgentSelector(false);
+		// If this was a new chat without any messages, we could optionally delete it
+		// For now, just hide the selector
+	}, [setShowAgentSelector]);
 
 	const formatSessionIdFallback = (sessionId) => {
 		if (!sessionId) return "Chat";
@@ -220,7 +262,7 @@ function App() {
 				sessions={sessions}
 				activeSessionId={activeSessionId}
 				selectedModel={selectedModel}
-				onNewChat={handleNewChat}
+				onNewChat={handleNewChatWithAgent}
 				onSelectSession={handleSelectSession}
 				onDeleteSession={handleDeleteSession}
 				onRenameSession={handleRenameSession}
@@ -254,9 +296,20 @@ function App() {
 					modelsLoading={modelsLoading}
 					modelsError={modelsError}
 					isInitialized={isInitialized}
+					// Pass agent selector info
+					showAgentSelector={showAgentSelector}
+					sessionAgents={sessionAgents}
 				/>
 			) : (
 				<DocumentViewer onBackToChat={handleBackToChat} />
+			)}
+			
+			{/* Render AgentSelector as overlay when needed */}
+			{showAgentSelector && (
+				<AgentSelector
+					onAgentSelect={handleAgentSelect}
+					onCancel={handleAgentCancel}
+				/>
 			)}
 		</div>
 	);

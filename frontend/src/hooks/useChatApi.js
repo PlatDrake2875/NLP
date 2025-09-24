@@ -29,7 +29,7 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 
 	// --- Interactive Chat Submission ---
 	const handleChatSubmit = useCallback(
-		async (query, model) => {
+		async (query, model, agent = null) => {
 			if (!activeSessionId || !model || isSubmitting) {
 				console.warn("API Hook: Chat submission prevented.", {
 					activeSessionId,
@@ -85,7 +85,11 @@ export function useChatApi(apiBaseUrl, activeSessionId, setSessions) {
 						"Content-Type": "application/json",
 						Accept: "text/event-stream",
 					},
-					body: JSON.stringify({ query, model }), // Ensure this matches backend ChatRequest
+					body: JSON.stringify({ 
+						query, 
+						model,
+						...(agent && { agent_name: agent }) // Include agent_name only if agent is provided
+					}),
 				});
 
 				if (!response.ok || !response.body) {

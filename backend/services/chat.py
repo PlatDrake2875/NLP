@@ -35,6 +35,7 @@ class ChatService:
         self,
         query: str,
         model_name: Optional[str] = None,
+        agent_name: Optional[str] = None,
         history: Optional[list[dict]] = None,
         use_rag: Optional[bool] = None,
     ) -> AsyncGenerator[str, None]:
@@ -56,6 +57,7 @@ class ChatService:
                 messages_for_llm=messages_for_llm,
                 stream_id=stream_id,
                 model_name=effective_model_name,
+                agent_name=agent_name,
             ):
                 yield chunk
         else:
@@ -149,10 +151,14 @@ class ChatService:
         yield f"data: {json.dumps({'status': 'done'})}\n\n"
 
     async def _local_nemo_guardrails_stream(
-        self, messages_for_llm: list[dict], stream_id: str, model_name: str
+        self,
+        messages_for_llm: list[dict],
+        stream_id: str,
+        model_name: str,
+        agent_name: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """Stream chat completion using local NeMo Guardrails integration."""
-        nemo_instance = await get_local_nemo_instance()
+        nemo_instance = await get_local_nemo_instance(agent_name)
 
         if not nemo_instance.is_available():
             error_msg = "Local NeMo Guardrails instance not properly initialized"
