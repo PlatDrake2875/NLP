@@ -80,7 +80,6 @@ class RAGComponents:
                         f"Using existing ChromaDB collection: {COLLECTION_NAME}"
                     )
                 except ValueError:
-                    # Collection doesn't exist, create it
                     self.chroma_client.create_collection(
                         name=COLLECTION_NAME,
                         metadata={"hnsw:space": "cosine"},  # Explicit metadata

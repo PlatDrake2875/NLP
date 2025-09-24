@@ -12,6 +12,8 @@ from typing import Optional
 from fastapi import HTTPException
 from nemoguardrails import LLMRails, RailsConfig
 
+from config import OLLAMA_BASE_URL
+
 logger = logging.getLogger("nemo_service")
 
 
@@ -22,120 +24,50 @@ class NemoService:
         self.config_path = config_path or self._get_default_config_path()
         self.rails: Optional[LLMRails] = None
         self._is_initialized = False
+        self.base_url = OLLAMA_BASE_URL
 
     def _get_default_config_path(self) -> str:
         """Get the default config path relative to the backend directory."""
-        current_dir = Path(__file__).parent.parent  # Go up from services to backend
+        current_dir = Path(__file__).parent.parent
         config_dir = current_dir / "guardrails_config" / "mybot"
         return str(config_dir)
-
-    def _get_ollama_base_url(self) -> str:
-        """Determine the appropriate Ollama base URL based on environment."""
-        base_url = "http://localhost:11434"
-        logger.info("Using Ollama base URL: %s", base_url)
-        return base_url
 
     async def initialize(self) -> bool:
         if self._is_initialized:
             return True
 
-        try:
-            logger.info("Initializing NeMo Guardrails with programmatic config")
+        logger.info(
+            "Initializing NeMo Guardrails with config from %s", self.config_path
+        )
 
-            base_url = self._get_ollama_base_url()
+        # Read the actual YAML config file
+        config_file = Path(self.config_path) / "config.yml"
+        colang_file = Path(self.config_path) / "config.co"
 
-            # Create config programmatically to avoid config parsing issues
-            yaml_content = f"""
-models:
-  - type: main
-    engine: ollama
-    model: gemma3:latest
-    parameters:
-      base_url: {base_url}
+        yaml_content = config_file.read_text(encoding="utf-8")
+        colang_content = colang_file.read_text(encoding="utf-8")
 
-instructions:
-  - type: general
-    content: "You are a helpful math AI assistant that must respond only in numbers and digits."
-"""
+        # Create rails configuration from YAML and Colang content
+        rails_config = RailsConfig.from_content(
+            colang_content=colang_content, yaml_content=yaml_content
+        )
 
-            # Create rails configuration from YAML content
-            rails_config = RailsConfig.from_content(
-                colang_content="", yaml_content=yaml_content
-            )
+        logger.info("Rails config created programmatically")
 
-            logger.info("Rails config created programmatically")
+        # Initialize the LLM Rails
+        self.rails = LLMRails(rails_config)
+        logger.info("LLM Rails initialized successfully")
 
-            # Initialize the LLM Rails
-            self.rails = LLMRails(rails_config)
-            logger.info("LLM Rails initialized successfully")
-
-            self._is_initialized = True
-            return True
-
-        except Exception as e:
-            logger.error("Failed to initialize NeMo Guardrails: %s", e)
-            return await self._try_fallback_initialization()
-
-    async def _try_fallback_initialization(self) -> bool:
-        """Try fallback initialization with minimal config."""
-        try:
-            logger.info("Trying fallback initialization without guardrails config")
-            base_url = self._get_ollama_base_url()
-
-            # Create a minimal rails instance
-            rails_config = RailsConfig.from_content(
-                yaml_content=f"""
-models:
-  - type: main
-    engine: ollama
-    model: gemma3:latest
-    parameters:
-      base_url: {base_url}
-""",
-            )
-            self.rails = LLMRails(rails_config)
-            self._is_initialized = True
-            logger.info("Fallback initialization successful")
-            return True
-
-        except Exception as fallback_error:
-            logger.error("Fallback initialization also failed: %s", fallback_error)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to initialize NeMo Guardrails: {fallback_error}",
-            ) from fallback_error
+        self._is_initialized = True
+        return True
 
     async def chat_completion(
         self,
         messages: list[dict[str, str]],
         model: str = "llama3",
-        **kwargs,  # Accept but ignore unused parameters
+        **kwargs,
     ) -> dict:
-        """
-        Process a chat completion request through NeMo Guardrails.
-
-        Args:
-            messages: List of chat messages
-            model: Model name (passed through to underlying LLM)
-            **kwargs: Additional parameters (stream, max_tokens, etc.)
-
-        Returns:
-            Dict: Chat completion response
-
-        Raises:
-            HTTPException: If service not initialized or processing fails.
-        """
-        if not self._is_initialized:
-            raise HTTPException(
-                status_code=500,
-                detail="NeMo Guardrails not initialized. Call initialize() first.",
-            )
-
-        if not self.rails:
-            raise HTTPException(status_code=500, detail="Rails not available")
-
         try:
-            # Extract the user message (last message typically)
             user_message = self._extract_user_message(messages)
 
             logger.info(
@@ -173,71 +105,108 @@ models:
         self,
         messages: list[dict[str, str]],
         model: str = "llama3",
-        **kwargs,  # Accept but ignore unused parameters
+        **kwargs,
     ) -> AsyncIterator[str]:
-        """
-        Stream a chat completion response through NeMo Guardrails.
+        # Create response ID and timestamp upfront
+        response_id = f"chatcmpl-local-{int(time.time())}"
+        created_time = int(time.time())
 
-        Args:
-            messages: List of chat messages
-            model: Model name
-            **kwargs: Additional parameters (max_tokens, etc.)
-
-        Yields:
-            str: Streaming response chunks in SSE format
-
-        Raises:
-            HTTPException: If service not initialized or streaming fails.
-        """
         if not self._is_initialized:
-            raise HTTPException(
-                status_code=500,
-                detail="NeMo Guardrails not initialized. Call initialize() first.",
-            )
+            # Yield initialization error in SSE format
+            error_data = {
+                "id": response_id,
+                "object": "chat.completion.chunk",
+                "created": created_time,
+                "model": model,
+                "error": {
+                    "message": "NeMo Guardrails not initialized",
+                    "type": "initialization_error",
+                },
+            }
+            yield f"data: {self._json_dumps(error_data)}\n\n"
+            yield "data: [DONE]\n\n"
+            return
 
         try:
-            # Get the full response first (TODO: implement true streaming if supported)
-            response = await self.chat_completion(
-                messages=messages,
-                model=model,
-                **kwargs,
-            )
-
-            # Simulate streaming by yielding the response
-            content = response["choices"][0]["message"]["content"]
-
-            # Yield the streaming response in SSE format
-            chunk_data = {
-                "id": response["id"],
+            # Yield initial processing chunk
+            processing_chunk = {
+                "id": response_id,
                 "object": "chat.completion.chunk",
-                "created": response["created"],
+                "created": created_time,
                 "model": model,
                 "choices": [
-                    {"index": 0, "delta": {"content": content}, "finish_reason": None}
+                    {"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}
                 ],
             }
+            yield f"data: {self._json_dumps(processing_chunk)}\n\n"
 
-            yield f"data: {self._json_dumps(chunk_data)}\n\n"
+            # Extract user message
+            user_message = self._extract_user_message(messages)
+
+            logger.info(
+                "Processing message through guardrails: %s...", user_message[:100]
+            )
+
+            # Generate response through NeMo Guardrails
+            result = await self.rails.generate_async(user_message)
+
+            # Split content into chunks for more realistic streaming
+            if result:
+                words = result.split()
+                chunk_size = max(1, len(words) // 10)  # Split into ~10 chunks
+
+                for i in range(0, len(words), chunk_size):
+                    chunk_words = words[i : i + chunk_size]
+                    chunk_content = " ".join(chunk_words)
+
+                    # Add space before chunk if not first chunk
+                    if i > 0:
+                        chunk_content = " " + chunk_content
+
+                    chunk_data = {
+                        "id": response_id,
+                        "object": "chat.completion.chunk",
+                        "created": created_time,
+                        "model": model,
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {"content": chunk_content},
+                                "finish_reason": None,
+                            }
+                        ],
+                    }
+                    yield f"data: {self._json_dumps(chunk_data)}\n\n"
 
             # Final chunk to indicate completion
             final_chunk = {
-                "id": response["id"],
+                "id": response_id,
                 "object": "chat.completion.chunk",
-                "created": response["created"],
+                "created": created_time,
                 "model": model,
                 "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                "usage": self._calculate_usage(user_message, result),
             }
 
             yield f"data: {self._json_dumps(final_chunk)}\n\n"
             yield "data: [DONE]\n\n"
+
+            logger.info("Generated response: %s...", result[:100] if result else "None")
 
         except HTTPException:
             raise
         except Exception as e:
             logger.error("Error in streaming chat completion: %s", e)
             # Yield error in SSE format
-            error_data = {"error": {"message": str(e), "type": "internal_error"}}
+            error_data = {
+                "id": response_id,
+                "object": "chat.completion.chunk",
+                "created": created_time,
+                "model": model,
+                "error": {"message": str(e), "type": "internal_error"},
+            }
             yield f"data: {self._json_dumps(error_data)}\n\n"
+            yield "data: [DONE]\n\n"
 
     def _extract_user_message(self, messages: list[dict[str, str]]) -> str:
         """Extract the user message from the messages list."""

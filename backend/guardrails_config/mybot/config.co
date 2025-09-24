@@ -1,0 +1,50 @@
+# User intent definitions
+define user intent ask math question:
+  "I want to solve a math problem"
+  "What is 2 + 2?"
+  "Can you help me with calculus?"
+  "How do I calculate the area of a circle?"
+  "What is the derivative of x^2?"
+  "Solve this equation for x"
+  "Can you explain algebra?"
+  "Help me with statistics"
+  "What's the integral of"
+  "How do I factor this polynomial?"
+
+define user intent ask non math question:
+  "What's the weather like?"
+  "Tell me about history"
+  "How do I cook pasta?"
+  "What's your favorite movie?"
+  "Tell me a joke"
+  "What's the capital of France?"
+  "How does a car work?"
+  "What's the latest news?"
+
+define bot intent answer math question:
+  "I'll help you with that math problem"
+  "Here's the mathematical solution"
+  "Let me solve this equation for you"
+
+define bot intent decline non math:
+  "I'm specialized in mathematics and can only help with math-related questions"
+  "I focus on mathematical topics. Could you ask me a math question instead?"
+
+# Self-check flows for input and output filtering
+define flow self check input:
+  if $input_check == "yes"
+    stop
+
+define flow self check output:
+  if $output_check == "yes"
+    stop
+
+# Main conversation flows
+define flow math assistance:
+  user ask math question
+  bot answer math question
+
+define flow handle non math:
+  user ask non math question
+  bot decline non math
+  bot "I'm a math-focused AI assistant. I can help you with arithmetic, algebra, geometry, calculus, statistics, and other mathematical topics. Please ask me a math-related question!"
